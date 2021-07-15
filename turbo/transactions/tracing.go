@@ -49,7 +49,7 @@ func ComputeTxEnv(ctx context.Context, block *types.Block, cfg *params.ChainConf
 	signer := types.MakeSigner(cfg, block.NumberU64())
 
 	BlockContext := core.NewEVMBlockContext(block.Header(), getHeader, engine, nil, checkTEVM)
-	vmenv := vm.NewEVM(BlockContext, vm.TxContext{}, statedb, cfg, vm.Config{})
+	vmenv := vm.NewEVM(BlockContext, vm.TxContext{}, statedb, cfg, vm.Config{SkipAnalysis: core.SkipAnalysis(cfg, block.NumberU64())})
 	for idx, tx := range block.Transactions() {
 		select {
 		default:
@@ -128,7 +128,7 @@ func TraceTx(
 		streaming = true
 	}
 	// Run the transaction with tracing enabled.
-	vmenv := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer})
+	vmenv := vm.NewEVM(blockCtx, txCtx, ibs, chainConfig, vm.Config{Debug: true, Tracer: tracer, SkipAnalysis: core.SkipAnalysis(chainConfig, blockCtx.BlockNumber)})
 
 	var refunds bool = true
 	if config != nil && config.NoRefunds != nil && *config.NoRefunds {

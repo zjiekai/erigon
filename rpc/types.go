@@ -130,7 +130,7 @@ type BlockNumberOrHash struct {
 type erased BlockNumberOrHash
 
 func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
-	e := erased{}
+	var e erased
 	err := json.Unmarshal(data, &e)
 	if err == nil {
 		if e.BlockNumber != nil && e.BlockHash != nil {

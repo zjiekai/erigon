@@ -127,8 +127,9 @@ type BlockNumberOrHash struct {
 	RequireCanonical bool         `json:"requireCanonical,omitempty"`
 }
 
+type erased BlockNumberOrHash
+
 func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
-	type erased BlockNumberOrHash
 	e := erased{}
 	err := json.Unmarshal(data, &e)
 	if err == nil {

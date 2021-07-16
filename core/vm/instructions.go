@@ -276,11 +276,6 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 		panic(err)
 	}
 
-	evm := interpreter.evm
-	if evm.vmConfig.EnablePreimageRecording {
-		evm.IntraBlockState.AddPreimage(interpreter.hasherBuf, data)
-	}
-
 	size.SetBytes(interpreter.hasherBuf[:])
 	return nil, nil
 }
@@ -841,8 +836,8 @@ func opSuicide(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	beneficiaryAddr := common.Address(beneficiary.Bytes20())
 	balance := interpreter.evm.IntraBlockState.GetBalance(callerAddr)
 	interpreter.evm.IntraBlockState.AddBalance(beneficiaryAddr, balance)
-	if interpreter.evm.vmConfig.Debug {
-		interpreter.evm.vmConfig.Tracer.CaptureSelfDestruct(callerAddr, beneficiaryAddr, balance.ToBig())
+	if interpreter.evm.Config.Debug {
+		interpreter.evm.Config.Tracer.CaptureSelfDestruct(callerAddr, beneficiaryAddr, balance.ToBig())
 	}
 	interpreter.evm.IntraBlockState.Suicide(callerAddr)
 	return nil, nil

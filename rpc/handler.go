@@ -17,6 +17,7 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -27,10 +28,9 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/log"
 )
-
-const MaxGoroutinesPerBatchRequest = 50
 
 // handler handles JSON-RPC messages. There is one handler per connection. Note that
 // handler is not safe for concurrent use. Message handling never blocks indefinitely
@@ -68,8 +68,9 @@ type handler struct {
 
 	allowList AllowList // a list of explicitly allowed methods, if empty -- everything is allowed
 
-	subLock    sync.Mutex
-	serverSubs map[ID]*Subscription
+	subLock             sync.Mutex
+	serverSubs          map[ID]*Subscription
+	maxBatchConcurrency uint
 }
 
 type callProc struct {
@@ -77,7 +78,7 @@ type callProc struct {
 	notifiers []*Notifier
 }
 
-func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry, allowList AllowList) *handler {
+func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *serviceRegistry, allowList AllowList, maxBatchConcurrency uint) *handler {
 	rootCtx, cancelRoot := context.WithCancel(connCtx)
 	h := &handler{
 		reg:            reg,
@@ -91,6 +92,8 @@ func newHandler(connCtx context.Context, conn jsonWriter, idgen func() ID, reg *
 		serverSubs:     make(map[ID]*Subscription),
 		log:            log.Root(),
 		allowList:      allowList,
+
+		maxBatchConcurrency: maxBatchConcurrency,
 	}
 	if conn.remoteAddr() != "" {
 		h.log = h.log.New("conn", conn.remoteAddr())
@@ -141,12 +144,12 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage, stream *jsoniter.Stream) {
 			return
 		}
 
-		answers := make([]*jsonrpcMessage, 0, len(msgs))
+		answers := make([]interface{}, 0, len(msgs))
 		if allMethodsAreThreadSafe {
 			// All goroutines will place results right to this array. Because requests order must match reply orders.
 			answersWithNils := make([]*jsonrpcMessage, len(msgs))
 			// Bounded parallelism pattern explanation https://blog.golang.org/pipelines#TOC_9.
-			boundedConcurrency := make(chan struct{}, MaxGoroutinesPerBatchRequest)
+			boundedConcurrency := make(chan struct{}, h.maxBatchConcurrency)
 			defer close(boundedConcurrency)
 			wg := sync.WaitGroup{}
 			wg.Add(len(msgs))
@@ -168,10 +171,18 @@ func (h *handler) handleBatch(msgs []*jsonrpcMessage, stream *jsoniter.Stream) {
 				}
 			}
 		} else {
-			answers = make([]*jsonrpcMessage, 0, len(msgs))
+			answers = make([]interface{}, 0, len(msgs))
+			buf := bytes.NewBuffer(nil)
+			stream := jsoniter.NewStream(jsoniter.ConfigDefault, buf, 4096)
 			for _, msg := range calls {
+				buf.Reset()
+				stream.Reset(buf)
 				if answer := h.handleCallMsg(cp, msg, stream); answer != nil {
 					answers = append(answers, answer)
+				} else {
+					if buf.Len() > 0 {
+						answers = append(answers, json.RawMessage(common.CopyBytes(buf.Bytes())))
+					}
 				}
 			}
 		}

@@ -69,8 +69,6 @@ type IntraBlockState struct {
 	logs         map[common.Hash][]*types.Log
 	logSize      uint
 
-	preimages map[common.Hash][]byte
-
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
 	journal        *journal
@@ -89,7 +87,6 @@ func New(stateReader StateReader) *IntraBlockState {
 		stateObjectsDirty: make(map[common.Address]struct{}),
 		nilAccounts:       make(map[common.Address]struct{}),
 		logs:              make(map[common.Hash][]*types.Log),
-		preimages:         make(map[common.Hash][]byte),
 		journal:           newJournal(),
 		accessList:        newAccessList(),
 	}
@@ -107,7 +104,6 @@ func (sdb *IntraBlockState) Copy() *IntraBlockState {
 		refund:            sdb.refund,
 		logs:              make(map[common.Hash][]*types.Log, len(sdb.logs)),
 		logSize:           sdb.logSize,
-		preimages:         make(map[common.Hash][]byte, len(sdb.preimages)),
 		journal:           newJournal(),
 	}
 	// Copy the dirty states, logs, and preimages
@@ -141,9 +137,6 @@ func (sdb *IntraBlockState) Copy() *IntraBlockState {
 		}
 		ibs.logs[hash] = cpy
 	}
-	for hash, preimage := range sdb.preimages {
-		ibs.preimages[hash] = preimage
-	}
 	// comment from https://github.com/ethereum/go-ethereum/commit/6487c002f6b47e08cb9814f16712c6789b313a97#diff-c3757dc9e9d868f63bc84a0cc67159c1d5c22cc5d8c9468757098f0492e0658cR705
 	// Do we need to copy the access list? In practice: No. At the start of a
 	// transaction, the access list is empty. In practice, we only ever copy state
@@ -175,7 +168,7 @@ func (sdb *IntraBlockState) Error() error {
 
 // Reset clears out all ephemeral state objects from the state db, but keeps
 // the underlying state trie to avoid reloading data for the next operations.
-func (sdb *IntraBlockState) Reset() error {
+func (sdb *IntraBlockState) Reset() {
 	sdb.stateObjects = make(map[common.Address]*stateObject)
 	sdb.stateObjectsDirty = make(map[common.Address]struct{})
 	sdb.thash = common.Hash{}
@@ -183,10 +176,8 @@ func (sdb *IntraBlockState) Reset() error {
 	sdb.txIndex = 0
 	sdb.logs = make(map[common.Hash][]*types.Log)
 	sdb.logSize = 0
-	sdb.preimages = make(map[common.Hash][]byte)
 	sdb.clearJournalAndRefund()
 	sdb.accessList = newAccessList()
-	return nil
 }
 
 func (sdb *IntraBlockState) AddLog(log *types.Log) {
@@ -210,21 +201,6 @@ func (sdb *IntraBlockState) Logs() []*types.Log {
 		logs = append(logs, lgs...)
 	}
 	return logs
-}
-
-// AddPreimage records a SHA3 preimage seen by the VM.
-func (sdb *IntraBlockState) AddPreimage(hash common.Hash, preimage []byte) {
-	if _, ok := sdb.preimages[hash]; !ok {
-		sdb.journal.append(addPreimageChange{hash: hash})
-		pi := make([]byte, len(preimage))
-		copy(pi, preimage)
-		sdb.preimages[hash] = pi
-	}
-}
-
-// Preimages returns a list of SHA3 preimages that have been submitted.
-func (sdb *IntraBlockState) Preimages() map[common.Hash][]byte {
-	return sdb.preimages
 }
 
 // AddRefund adds gas to the refund counter
@@ -500,6 +476,7 @@ func (sdb *IntraBlockState) SetState(addr common.Address, key *common.Hash, valu
 // SetStorage replaces the entire storage for the specified account with given
 // storage. This function should only be used for debugging.
 func (sdb *IntraBlockState) SetStorage(addr common.Address, storage Storage) {
+	fmt.Printf("SetStorage: %x, %s\n ", addr, storage.String())
 	stateObject := sdb.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetStorage(storage)
@@ -732,6 +709,29 @@ func updateAccount(EIP158Enabled bool, stateWriter StateWriter, addr common.Addr
 	return nil
 }
 
+func printAccount(EIP158Enabled bool, addr common.Address, stateObject *stateObject, isDirty bool) {
+	emptyRemoval := EIP158Enabled && stateObject.empty()
+	if stateObject.suicided || (isDirty && emptyRemoval) {
+		fmt.Printf("delete: %x\n", addr)
+	}
+	if isDirty && (stateObject.created || !stateObject.suicided) && !emptyRemoval {
+		// Write any contract code associated with the state object
+		if stateObject.code != nil && stateObject.dirtyCode {
+			fmt.Printf("UpdateCode: %x,%x\n", addr, stateObject.CodeHash())
+		}
+		if stateObject.created {
+			fmt.Printf("CreateContract: %x\n", addr)
+		}
+		stateObject.printTrie()
+		if stateObject.data.Balance.IsUint64() {
+			fmt.Printf("UpdateAccountData: %x, balance=%d, nonce=%d\n", addr, stateObject.data.Balance.Uint64(), stateObject.data.Nonce)
+		} else {
+			div := uint256.NewInt(1_000_000_000)
+			fmt.Printf("UpdateAccountData: %x, balance=%d*%d, nonce=%d\n", addr, uint256.NewInt(0).Div(&stateObject.data.Balance, div).Uint64(), div.Uint64(), stateObject.data.Nonce)
+		}
+	}
+}
+
 // FinalizeTx should be called after every transaction.
 func (sdb *IntraBlockState) FinalizeTx(chainRules params.Rules, stateWriter StateWriter) error {
 	for addr := range sdb.journal.dirties {
@@ -772,6 +772,15 @@ func (sdb *IntraBlockState) CommitBlock(chainRules params.Rules, stateWriter Sta
 	// Invalidate journal because reverting across transactions is not allowed.
 	sdb.clearJournalAndRefund()
 	return nil
+}
+
+func (sdb *IntraBlockState) Print(chainRules params.Rules) {
+	for addr, stateObject := range sdb.stateObjects {
+		_, isDirty := sdb.stateObjectsDirty[addr]
+		_, isDirty2 := sdb.journal.dirties[addr]
+
+		printAccount(chainRules.IsEIP158, addr, stateObject, isDirty || isDirty2)
+	}
 }
 
 // Prepare sets the current transaction hash and index and block hash which is

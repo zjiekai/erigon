@@ -18,6 +18,7 @@ package state
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"fmt"
 	"math"
@@ -147,15 +148,6 @@ func newTestAction(addr common.Address, r *rand.Rand) testAction {
 			args: make([]int64, 1),
 		},
 		{
-			name: "AddPreimage",
-			fn: func(a testAction, s *IntraBlockState) {
-				preimage := []byte{1}
-				hash := common.BytesToHash(preimage)
-				s.AddPreimage(hash, preimage)
-			},
-			args: make([]int64, 1),
-		},
-		{
 			name: "AddAddressToAccessList",
 			fn: func(a testAction, s *IntraBlockState) {
 				s.AddAddressToAccessList(addr)
@@ -225,10 +217,16 @@ func (test *snapshotTest) String() string {
 
 func (test *snapshotTest) run() bool {
 	// Run all actions and create snapshots.
-	db := kv.NewMemDatabase()
+	db := kv.NewMemKV()
 	defer db.Close()
+	tx, err := db.BeginRw(context.Background())
+	if err != nil {
+		test.err = err
+		return false
+	}
+	defer tx.Rollback()
 	var (
-		ds           = NewDbStateReader(db)
+		ds           = NewPlainKvState(tx, 0)
 		state        = New(ds)
 		snapshotRevs = make([]int, len(test.snapshots))
 		sindex       = 0
@@ -243,7 +241,7 @@ func (test *snapshotTest) run() bool {
 	// Revert all snapshots in reverse order. Each revert must yield a state
 	// that is equivalent to fresh state with all actions up the snapshot applied.
 	for sindex--; sindex >= 0; sindex-- {
-		checkds := NewDbStateReader(db)
+		checkds := NewPlainKvState(tx, 0)
 		checkstate := New(checkds)
 		for _, action := range test.actions[:test.snapshots[sindex]] {
 			action.fn(action, checkstate)
@@ -354,8 +352,8 @@ func TestAccessList(t *testing.T) {
 		return common.HexToHash(a)
 	}
 
-	db := kv.NewTestDB(t)
-	state := New(NewPlainStateReader(db))
+	_, tx := kv.NewTestTx(t)
+	state := New(NewPlainKvState(tx, 0))
 	state.accessList = newAccessList()
 
 	verifyAddrs := func(astrings ...string) {

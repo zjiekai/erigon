@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"runtime"
 	"sort"
 	"strings"
@@ -23,8 +22,6 @@ import (
 	"github.com/ledgerwatch/erigon/metrics"
 	"github.com/torquem-ch/mdbx-go/mdbx"
 )
-
-var _ DbCopier = &MdbxKV{}
 
 const expectMdbxVersionMajor = 0
 const expectMdbxVersionMinor = 10
@@ -120,13 +117,10 @@ func (opts MdbxOpts) Open() (ethdb.RwKV, error) {
 	if expectMdbxVersionMajor != mdbx.Major || expectMdbxVersionMinor != mdbx.Minor {
 		return nil, fmt.Errorf("unexpected mdbx version: %d.%d, expected %d %d. Please run 'make mdbx'", mdbx.Major, mdbx.Minor, expectMdbxVersionMajor, expectMdbxVersionMinor)
 	}
-	var logger log.Logger
+	logger := log.New("mdbx", opts.label.String(), "exclusive", opts.flags&mdbx.Exclusive != 0)
 	var err error
 	if opts.inMem {
-		logger = log.New("mdbx", "inMem")
 		opts.path = testKVPath()
-	} else {
-		logger = log.New("mdbx", path.Base(opts.path))
 	}
 
 	env, err := mdbx.NewEnv()
@@ -326,11 +320,6 @@ type MdbxKV struct {
 	pageSize uint16
 }
 
-func (db *MdbxKV) NewDbWithTheSameParameters() *ObjectDatabase {
-	opts := db.opts
-	return NewObjectDatabase(NewMDBX().Set(opts).MustOpen())
-}
-
 // Close closes db
 // All transactions must be closed before closing the database.
 func (db *MdbxKV) Close() {
@@ -347,7 +336,7 @@ func (db *MdbxKV) Close() {
 			db.log.Warn("failed to remove in-mem db file", "err", err)
 		}
 	} else {
-		db.log.Info("database closed (MDBX)", "label", db.opts.label.String(), "exclusive", db.opts.flags&mdbx.Exclusive != 0)
+		db.log.Info("database closed (MDBX)")
 	}
 }
 
@@ -756,6 +745,7 @@ func (tx *MdbxTx) Commit() error {
 	if debug.BigRoTxKb() > 0 || debug.BigRwTxKb() > 0 {
 		tx.PrintDebugInfo()
 	}
+	tx.CollectMetrics()
 
 	latency, err := tx.tx.Commit()
 	if err != nil {

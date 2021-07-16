@@ -19,6 +19,7 @@ import (
 	"github.com/ledgerwatch/erigon/core/types/accounts"
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/core/vm/stack"
+	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/ethdb"
 	"github.com/ledgerwatch/erigon/ethdb/bitmapdb"
 	"github.com/ledgerwatch/erigon/log"
@@ -66,6 +67,13 @@ func SpawnCallTraces(s *StageState, tx ethdb.RwTx, quit <-chan struct{}, cfg Cal
 	endBlock, err := s.ExecutionAt(tx)
 	if cfg.ToBlock > 0 && cfg.ToBlock < endBlock {
 		endBlock = cfg.ToBlock
+	}
+	sendersProgress, err1 := stages.GetStageProgress(tx, stages.Senders)
+	if err1 != nil {
+		return err1
+	}
+	if endBlock != sendersProgress {
+		return nil
 	}
 	logPrefix := s.state.LogPrefix()
 	if err != nil {

@@ -250,6 +250,9 @@ func SpawnExecuteBlocksStage(s *StageState, u Unwinder, tx ethdb.RwTx, toBlock u
 		s.Done()
 		return nil
 	}
+	if to > s.BlockNumber+1 {
+		to = s.BlockNumber + 1
+	}
 	logPrefix := s.state.LogPrefix()
 	if to > s.BlockNumber+16 {
 		log.Info(fmt.Sprintf("[%s] Blocks execution", logPrefix), "from", s.BlockNumber, "to", to)

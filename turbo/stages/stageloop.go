@@ -152,7 +152,8 @@ func StageLoopStep(
 		notifications.Accumulator.Reset()
 	}
 
-	canRunCycleInOneTransaction := !initialCycle && highestSeenHeader-origin < 1024 && highestSeenHeader-hashStateStageProgress < 1024
+	//canRunCycleInOneTransaction := !initialCycle && highestSeenHeader-origin < 1024 && highestSeenHeader-hashStateStageProgress < 1024
+	canRunCycleInOneTransaction := true
 
 	var tx ethdb.RwTx // on this variable will run sync cycle.
 	if canRunCycleInOneTransaction {
@@ -161,6 +162,8 @@ func StageLoopStep(
 			return err
 		}
 		defer tx.Rollback()
+	} else {
+		tx = nil
 	}
 	for i := 0; i < 10000; i++ {
 		var st *stagedsync.State

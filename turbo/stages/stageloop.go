@@ -154,15 +154,17 @@ func StageLoopStep(
 
 	canRunCycleInOneTransaction := !initialCycle && highestSeenHeader-origin < 1024 && highestSeenHeader-hashStateStageProgress < 1024
 
+	var tx ethdb.RwTx // on this variable will run sync cycle.
+	if canRunCycleInOneTransaction {
+		tx, err = db.BeginRw(context.Background())
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+	}
 	for i := 0; i < 10000; i++ {
-		var tx ethdb.RwTx // on this variable will run sync cycle.
 		var st *stagedsync.State
 		if canRunCycleInOneTransaction {
-			tx, err = db.BeginRw(context.Background())
-			if err != nil {
-				return err
-			}
-			defer tx.Rollback()
 			st, err = sync.Prepare(nil, tx)
 			if err != nil {
 				return fmt.Errorf("prepare staged sync: %w", err)
@@ -177,14 +179,14 @@ func StageLoopStep(
 		if err != nil {
 			return err
 		}
-		if canRunCycleInOneTransaction {
-			commitStart := time.Now()
-			errTx := tx.Commit()
-			if errTx != nil {
-				return errTx
-			}
-			log.Info("Commit cycle", "in", time.Since(commitStart))
+	}
+	if canRunCycleInOneTransaction {
+		commitStart := time.Now()
+		errTx := tx.Commit()
+		if errTx != nil {
+			return errTx
 		}
+		log.Info("Commit cycle", "in", time.Since(commitStart))
 	}
 	var rotx ethdb.Tx
 	if rotx, err = db.BeginRo(ctx); err != nil {

@@ -167,17 +167,19 @@ func StageLoopStep(
 		defer tx.Rollback()
 	}
 
-	err = st.Run(db, tx, initialCycle)
-	if err != nil {
-		return err
-	}
-	if canRunCycleInOneTransaction {
-		commitStart := time.Now()
-		errTx := tx.Commit()
-		if errTx != nil {
-			return errTx
+	for i := 0; i < 10000; i++ {
+		err = st.Run(db, tx, initialCycle)
+		if err != nil {
+			return err
 		}
-		log.Info("Commit cycle", "in", time.Since(commitStart))
+		if canRunCycleInOneTransaction {
+			commitStart := time.Now()
+			errTx := tx.Commit()
+			if errTx != nil {
+				return errTx
+			}
+			log.Info("Commit cycle", "in", time.Since(commitStart))
+		}
 	}
 	var rotx ethdb.Tx
 	if rotx, err = db.BeginRo(ctx); err != nil {

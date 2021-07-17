@@ -154,7 +154,7 @@ func StageLoopStep(
 
 	//canRunCycleInOneTransaction := !initialCycle && highestSeenHeader-origin < 1024 && highestSeenHeader-hashStateStageProgress < 1024
 	canRunCycleInOneTransaction := true
-
+	timer := time.NewTimer(10 * time.Minute)
 	var tx ethdb.RwTx // on this variable will run sync cycle.
 	if canRunCycleInOneTransaction {
 		tx, err = db.BeginRw(context.Background())
@@ -165,7 +165,12 @@ func StageLoopStep(
 	} else {
 		tx = nil
 	}
-	for i := 0; i < 10000; i++ {
+	for {
+		select {
+		case <-timer.C:
+			break
+		default:
+		}
 		var st *stagedsync.State
 		if canRunCycleInOneTransaction {
 			st, err = sync.Prepare(nil, tx)

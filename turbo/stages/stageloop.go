@@ -151,23 +151,28 @@ func StageLoopStep(
 	if notifications != nil && notifications.Accumulator != nil {
 		notifications.Accumulator.Reset()
 	}
-	st, err1 := sync.Prepare(db, nil)
-	if err1 != nil {
-		return fmt.Errorf("prepare staged sync: %w", err1)
-	}
 
 	canRunCycleInOneTransaction := !initialCycle && highestSeenHeader-origin < 1024 && highestSeenHeader-hashStateStageProgress < 1024
 
-	var tx ethdb.RwTx // on this variable will run sync cycle.
-	if canRunCycleInOneTransaction {
-		tx, err = db.BeginRw(context.Background())
-		if err != nil {
-			return err
-		}
-		defer tx.Rollback()
-	}
-
 	for i := 0; i < 10000; i++ {
+		var tx ethdb.RwTx // on this variable will run sync cycle.
+		var st *stagedsync.State
+		if canRunCycleInOneTransaction {
+			tx, err = db.BeginRw(context.Background())
+			if err != nil {
+				return err
+			}
+			defer tx.Rollback()
+			st, err = sync.Prepare(nil, tx)
+			if err != nil {
+				return fmt.Errorf("prepare staged sync: %w", err)
+			}
+		} else {
+			st, err = sync.Prepare(db, nil)
+			if err != nil {
+				return fmt.Errorf("prepare staged sync: %w", err)
+			}
+		}
 		err = st.Run(db, tx, initialCycle)
 		if err != nil {
 			return err

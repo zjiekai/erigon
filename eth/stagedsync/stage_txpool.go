@@ -10,6 +10,7 @@ import (
 	"github.com/ledgerwatch/erigon/core"
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
+	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/ethdb"
 	"github.com/ledgerwatch/erigon/log"
 )
@@ -28,11 +29,12 @@ func StageTxPoolCfg(db ethdb.RwKV, pool *core.TxPool, startFunc func()) TxPoolCf
 	}
 }
 
-func SpawnTxPool(s *StageState, tx ethdb.RwTx, cfg TxPoolCfg, quitCh <-chan struct{}) error {
+func SpawnTxPool(s *StageState, tx ethdb.RwTx, cfg TxPoolCfg, ctx context.Context) error {
+	quitCh := ctx.Done()
 	useExternalTx := tx != nil
 	if !useExternalTx {
 		var err error
-		tx, err = cfg.db.BeginRw(context.Background())
+		tx, err = cfg.db.BeginRw(ctx)
 		if err != nil {
 			return err
 		}
@@ -46,8 +48,16 @@ func SpawnTxPool(s *StageState, tx ethdb.RwTx, cfg TxPoolCfg, quitCh <-chan stru
 		s.Done()
 		return nil
 	}
+	sendersProgress, err1 := stages.GetStageProgress(tx, stages.Senders)
+	if err1 != nil {
+		return err1
+	}
+	if to != sendersProgress {
+		s.Done()
+		return nil
+	}
 
-	logPrefix := s.state.LogPrefix()
+	logPrefix := s.LogPrefix()
 	if to < s.BlockNumber {
 		return fmt.Errorf("%s: to (%d) < from (%d)", logPrefix, to, s.BlockNumber)
 	}
@@ -148,22 +158,22 @@ func incrementalTxPoolUpdate(logPrefix string, from, to uint64, pool *core.TxPoo
 	return nil
 }
 
-func UnwindTxPool(u *UnwindState, s *StageState, tx ethdb.RwTx, cfg TxPoolCfg, quitCh <-chan struct{}) error {
+func UnwindTxPool(u *UnwindState, s *StageState, tx ethdb.RwTx, cfg TxPoolCfg, ctx context.Context) (err error) {
 	if u.UnwindPoint >= s.BlockNumber {
 		s.Done()
 		return nil
 	}
 	useExternalTx := tx != nil
 	if !useExternalTx {
-		var err error
-		tx, err = cfg.db.BeginRw(context.Background())
+		tx, err = cfg.db.BeginRw(ctx)
 		if err != nil {
 			return err
 		}
 		defer tx.Rollback()
 	}
+	quitCh := ctx.Done()
 
-	logPrefix := s.state.LogPrefix()
+	logPrefix := s.LogPrefix()
 	if cfg.pool != nil && cfg.pool.IsStarted() {
 		if err := unwindTxPoolUpdate(logPrefix, u.UnwindPoint, s.BlockNumber, cfg.pool, tx, quitCh); err != nil {
 			return fmt.Errorf("[%s]: %w", logPrefix, err)
@@ -276,5 +286,26 @@ func unwindTxPoolUpdate(logPrefix string, from, to uint64, pool *core.TxPool, tx
 	log.Info(fmt.Sprintf("[%s] Injecting txs into the pool", logPrefix), "number", len(txsToInject))
 	pool.AddRemotesSync(txsToInject)
 	log.Info(fmt.Sprintf("[%s] Injection complete", logPrefix))
+	return nil
+}
+
+func PruneTxPool(s *PruneState, tx ethdb.RwTx, cfg TxPoolCfg, ctx context.Context) (err error) {
+	useExternalTx := tx != nil
+	if !useExternalTx {
+		tx, err = cfg.db.BeginRw(ctx)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+	}
+
+	if err = s.Done(tx); err != nil {
+		return err
+	}
+	if !useExternalTx {
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+	}
 	return nil
 }

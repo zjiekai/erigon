@@ -48,6 +48,14 @@ func FinishForward(s *StageState, tx ethdb.RwTx, cfg FinishCfg) error {
 		s.Done()
 		return nil
 	}
+	sendersProgress, err1 := stages.GetStageProgress(tx, stages.Senders)
+	if err1 != nil {
+		return err1
+	}
+	if executionAt != sendersProgress {
+		s.Done()
+		return nil
+	}
 
 	if cfg.snBuilder != nil && useExternalTx {
 		snBlock := snapshotsync.CalculateEpoch(executionAt, snapshotsync.EpochSize)
@@ -75,22 +83,42 @@ func FinishForward(s *StageState, tx ethdb.RwTx, cfg FinishCfg) error {
 	return nil
 }
 
-func UnwindFinish(u *UnwindState, s *StageState, tx ethdb.RwTx, cfg FinishCfg) error {
+func UnwindFinish(u *UnwindState, tx ethdb.RwTx, cfg FinishCfg, ctx context.Context) (err error) {
 	useExternalTx := tx != nil
 	if !useExternalTx {
-		var err error
-		tx, err = cfg.db.BeginRw(context.Background())
+		tx, err = cfg.db.BeginRw(ctx)
 		if err != nil {
 			return err
 		}
 		defer tx.Rollback()
 	}
-	err := u.Done(tx)
-	if err != nil {
+
+	if err = u.Done(tx); err != nil {
 		return err
 	}
 	if !useExternalTx {
-		if err := tx.Commit(); err != nil {
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PruneFinish(u *PruneState, tx ethdb.RwTx, cfg FinishCfg, ctx context.Context) (err error) {
+	useExternalTx := tx != nil
+	if !useExternalTx {
+		tx, err = cfg.db.BeginRw(ctx)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+	}
+
+	if err = u.Done(tx); err != nil {
+		return err
+	}
+	if !useExternalTx {
+		if err = tx.Commit(); err != nil {
 			return err
 		}
 	}

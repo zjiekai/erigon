@@ -74,6 +74,18 @@ func HeadersForward(
 		}
 		defer tx.Rollback()
 	}
+	sendersProgress, err1 := stages.GetStageProgress(tx, stages.Senders)
+	if err1 != nil {
+		return err1
+	}
+	execProgress, err2 := stages.GetStageProgress(tx, stages.Execution)
+	if err2 != nil {
+		return err2
+	}
+	if execProgress != sendersProgress {
+		s.Done()
+		return nil
+	}
 	if err = cfg.hd.ReadProgressFromDb(tx); err != nil {
 		return err
 	}

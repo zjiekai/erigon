@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/dbutils"
 )
 
@@ -19,6 +18,7 @@ const (
 	// SortableOldestAppearedBuffer - buffer that keeps only the oldest entries.
 	// if first v1 was added under key K, then v2; only v1 will stay
 	SortableOldestAppearedBuffer
+	SortableNewestAppearedBuffer
 
 	BufIOSize = 64 * 4096 // 64 pages | default is 1 page | increasing further doesn't show speedup on SSD
 )
@@ -45,6 +45,7 @@ var (
 	_ Buffer = &sortableBuffer{}
 	_ Buffer = &appendSortableBuffer{}
 	_ Buffer = &oldestEntrySortableBuffer{}
+	_ Buffer = &newestEntrySortableBuffer{}
 )
 
 func NewSortableBuffer(bufferOptimalSize datasize.ByteSize) *sortableBuffer {
@@ -214,9 +215,6 @@ func (b *oldestEntrySortableBuffer) Put(k, v []byte) {
 
 	b.size += len(k)
 	b.size += len(v)
-	if v != nil {
-		v = common.CopyBytes(v)
-	}
 	b.entries[ks] = v
 }
 
@@ -263,6 +261,76 @@ func (b *oldestEntrySortableBuffer) CheckFlushSize() bool {
 	return b.size >= b.optimalSize
 }
 
+func NewNewestEntryBuffer(bufferOptimalSize datasize.ByteSize) *newestEntrySortableBuffer {
+	return &newestEntrySortableBuffer{
+		entries:     make(map[string][]byte),
+		size:        0,
+		optimalSize: int(bufferOptimalSize.Bytes()),
+	}
+}
+
+type newestEntrySortableBuffer struct {
+	entries     map[string][]byte
+	size        int
+	optimalSize int
+	sortedBuf   []sortableBufferEntry
+	comparator  dbutils.CmpFunc
+}
+
+func (b *newestEntrySortableBuffer) SetComparator(cmp dbutils.CmpFunc) {
+	b.comparator = cmp
+}
+
+func (b *newestEntrySortableBuffer) Put(k, v []byte) {
+	ks := string(k)
+	b.size += len(k)
+	b.size += len(v)
+	b.entries[ks] = v
+}
+
+func (b *newestEntrySortableBuffer) Size() int {
+	return b.size
+}
+
+func (b *newestEntrySortableBuffer) Len() int {
+	return len(b.entries)
+}
+
+func (b *newestEntrySortableBuffer) Sort() {
+	for k, v := range b.entries {
+		b.sortedBuf = append(b.sortedBuf, sortableBufferEntry{key: []byte(k), value: v})
+	}
+	sort.Stable(b)
+}
+
+func (b *newestEntrySortableBuffer) Less(i, j int) bool {
+	if b.comparator != nil {
+		return b.comparator(b.sortedBuf[i].key, b.sortedBuf[j].key, b.sortedBuf[i].value, b.sortedBuf[j].value) < 0
+	}
+	return bytes.Compare(b.sortedBuf[i].key, b.sortedBuf[j].key) < 0
+}
+
+func (b *newestEntrySortableBuffer) Swap(i, j int) {
+	b.sortedBuf[i], b.sortedBuf[j] = b.sortedBuf[j], b.sortedBuf[i]
+}
+
+func (b *newestEntrySortableBuffer) Get(i int) sortableBufferEntry {
+	return b.sortedBuf[i]
+}
+func (b *newestEntrySortableBuffer) Reset() {
+	b.sortedBuf = nil
+	b.entries = make(map[string][]byte)
+	b.size = 0
+}
+
+func (b *newestEntrySortableBuffer) GetEntries() []sortableBufferEntry {
+	return b.sortedBuf
+}
+
+func (b *newestEntrySortableBuffer) CheckFlushSize() bool {
+	return b.size >= b.optimalSize
+}
+
 func getBufferByType(tp int, size datasize.ByteSize) Buffer {
 	switch tp {
 	case SortableSliceBuffer:
@@ -271,6 +339,8 @@ func getBufferByType(tp int, size datasize.ByteSize) Buffer {
 		return NewAppendBuffer(size)
 	case SortableOldestAppearedBuffer:
 		return NewOldestEntryBuffer(size)
+	case SortableNewestAppearedBuffer:
+		return NewNewestEntryBuffer(size)
 	default:
 		panic("unknown buffer type " + strconv.Itoa(tp))
 	}
@@ -284,6 +354,8 @@ func getTypeByBuffer(b Buffer) int {
 		return SortableAppendBuffer
 	case *oldestEntrySortableBuffer:
 		return SortableOldestAppearedBuffer
+	case *newestEntrySortableBuffer:
+		return SortableNewestAppearedBuffer
 	default:
 		panic(fmt.Sprintf("unknown buffer type: %T ", b))
 	}

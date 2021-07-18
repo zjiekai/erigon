@@ -117,11 +117,11 @@ func RegenerateIntermediateHashes(logPrefix string, db ethdb.RwTx, cfg TrieCfg, 
 	_ = db.(ethdb.BucketMigrator).ClearBucket(dbutils.TrieOfAccountsBucket)
 	_ = db.(ethdb.BucketMigrator).ClearBucket(dbutils.TrieOfStorageBucket)
 
-	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer accTrieCollector.Close(logPrefix)
 	accTrieCollectorFunc := accountTrieCollector(accTrieCollector)
 
-	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer stTrieCollector.Close(logPrefix)
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 
@@ -353,11 +353,11 @@ func incrementIntermediateHashes(logPrefix string, s *StageState, db ethdb.RwTx,
 		return trie.EmptyRoot, err
 	}
 
-	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer accTrieCollector.Close(logPrefix)
 	accTrieCollectorFunc := accountTrieCollector(accTrieCollector)
 
-	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer stTrieCollector.Close(logPrefix)
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 
@@ -442,11 +442,11 @@ func unwindIntermediateHashesStageImpl(logPrefix string, u *UnwindState, s *Stag
 		return err
 	}
 
-	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer accTrieCollector.Close(logPrefix)
 	accTrieCollectorFunc := accountTrieCollector(accTrieCollector)
 
-	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewNewestEntryBuffer(etl.BufferOptimalSize))
 	defer stTrieCollector.Close(logPrefix)
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 

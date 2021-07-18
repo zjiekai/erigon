@@ -93,7 +93,7 @@ func NewCollector(tmpdir string, sortableBuffer Buffer) *Collector {
 	}
 
 	c.extractNextFunc = func(originalK, k []byte, v []byte) error {
-		sortableBuffer.Put(common.CopyBytes(k), common.CopyBytes(v))
+		sortableBuffer.Put(k, v)
 		if sortableBuffer.CheckFlushSize() {
 			if err := c.flushBuffer(originalK, false); err != nil {
 				return err

@@ -2011,6 +2011,17 @@ func scanTxs(chaindata string) error {
 func aggregatePlainState(chaindata string) error {
 	db := kv2.MustOpen(chaindata)
 	defer db.Close()
+	for i := 0; i < 256; i++ {
+		go func(i int) {
+			tx, err := db.BeginRo(context.Background())
+			if err != nil {
+				panic(err)
+			}
+			defer tx.Rollback()
+			_ = tx.ForAmount(dbutils.PlainStateBucket, []byte{byte(i)}, 10_000, func(k, v []byte) error { return nil })
+		}(i)
+	}
+
 	tx, err := db.BeginRo(context.Background())
 	if err != nil {
 		return err

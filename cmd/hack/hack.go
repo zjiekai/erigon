@@ -2017,11 +2017,18 @@ func aggregatePlainState(chaindata string) error {
 	}
 	defer tx.Rollback()
 
+	logEvery := time.NewTicker(10 * time.Second)
+	defer logEvery.Stop()
 	totalNonUniqueSize := 0
 	uniqueValues := map[string]int{}
 	if err := tx.ForEach(dbutils.PlainStateBucket, nil, func(k, v []byte) error {
 		if len(k) != 20 {
 			return nil
+		}
+		select {
+		case <-logEvery.C:
+			fmt.Printf("progress: %x\n", k)
+		default:
 		}
 		totalNonUniqueSize += len(v)
 		if _, ok := uniqueValues[string(v)]; ok {

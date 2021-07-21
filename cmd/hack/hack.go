@@ -2008,10 +2008,64 @@ func scanTxs(chaindata string) error {
 	return nil
 }
 
+func aggregatePlainState(chaindata string) error {
+	db := kv2.MustOpen(chaindata)
+	defer db.Close()
+	tx, err := db.BeginRo(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	totalNonUniqueSize := 0
+	uniqueValues := map[string]int{}
+	if err := tx.ForEach(dbutils.PlainStateBucket, nil, func(k, v []byte) error {
+		if len(k) != 20 {
+			return nil
+		}
+		totalNonUniqueSize += len(v)
+		if _, ok := uniqueValues[string(v)]; ok {
+			uniqueValues[string(v)]++
+		} else {
+			uniqueValues[string(v)] = 0
+		}
+		return nil
+	}); err != nil {
+		panic(err)
+	}
+
+	totalUniqueSize := 0
+	for v := range uniqueValues {
+		totalUniqueSize += len(v)
+	}
+
+	fmt.Printf("totalNonUniqueSize=%d,totalUniqueSize=%d\n", totalNonUniqueSize, totalUniqueSize)
+	bucket5 := 0
+	bucket10 := 0
+	bucket20 := 0
+	bucketInf := 0
+	for v := range uniqueValues {
+		totalUniqueSize += len(v)
+		switch true {
+		case len(v) <= 5:
+			bucket5++
+		case len(v) <= 10:
+			bucket10++
+		case len(v) <= 20:
+			bucket20++
+		default:
+			bucketInf++
+		}
+	}
+	fmt.Printf("buckets: 5=%d, 10=%d, 20=%d, inf=%d\n", bucket5, bucket10, bucket20, bucketInf)
+
+	return nil
+}
+
 func scanReceipts3(chaindata string, block uint64) error {
-	dbdb := kv2.MustOpen(chaindata)
-	defer dbdb.Close()
-	tx, err := dbdb.BeginRw(context.Background())
+	db := kv2.MustOpen(chaindata)
+	defer db.Close()
+	tx, err := db.BeginRw(context.Background())
 	if err != nil {
 		return err
 	}
@@ -2428,6 +2482,9 @@ func main() {
 
 	case "scanReceipts3":
 		err = scanReceipts3(*chaindata, uint64(*block))
+
+	case "aggregatePlainState":
+		err = aggregatePlainState(*chaindata)
 	}
 
 	if err != nil {

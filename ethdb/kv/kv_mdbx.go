@@ -149,11 +149,11 @@ func (opts MdbxOpts) Open() (ethdb.RwKV, error) {
 				return nil, err
 			}
 		} else {
-			if err = env.SetGeometry(-1, -1, int(opts.mapSize), int(2*datasize.GB), -1, pageSize); err != nil {
+			if err = env.SetGeometry(-1, -1, int(opts.mapSize), int(1*datasize.GB), -1, pageSize); err != nil {
 				return nil, err
 			}
 		}
-		if err = env.SetOption(mdbx.OptRpAugmentLimit, 32*1024*1024); err != nil {
+		if err = env.SetOption(mdbx.OptRpAugmentLimit, 16*1024*1024); err != nil {
 			return nil, err
 		}
 		if err = os.MkdirAll(opts.path, 0744); err != nil {

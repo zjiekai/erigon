@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon/log"
 	"sync"
 	"unsafe"
+
+	"github.com/ledgerwatch/erigon/log"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/dbutils"
@@ -294,6 +295,10 @@ func (s *snTX) ClearBucket(bucket string) error {
 
 func (s *snTX) ExistingBuckets() ([]string, error) {
 	return s.dbTX.(ethdb.BucketMigrator).ExistingBuckets()
+}
+
+func (s *snTX) SpaceDirty() (dirty uint64, txSize uint64, err error) {
+	return s.dbTX.(ethdb.RwTx).SpaceDirty()
 }
 
 func (s *snTX) Cursor(bucket string) (ethdb.Cursor, error) {

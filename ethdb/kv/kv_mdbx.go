@@ -184,7 +184,12 @@ func (opts MdbxOpts) Open() (ethdb.RwKV, error) {
 		if err = env.SetOption(mdbx.OptDpReverseLimit, 16*1024); err != nil {
 			return nil, err
 		}
-		if err = env.SetOption(mdbx.OptTxnDpLimit, defaultDirtyPagesLimit*2); err != nil { // default is RAM/42
+		newDpLimit := defaultDirtyPagesLimit * 4
+		maxDpLimit := uint64(1*datasize.GB) / uint64(pageSize)
+		if newDpLimit > maxDpLimit {
+			newDpLimit = maxDpLimit
+		}
+		if err = env.SetOption(mdbx.OptTxnDpLimit, newDpLimit); err != nil { // default is RAM/42
 			return nil, err
 		}
 		// must be in the range from 12.5% (almost empty) to 50% (half empty)
@@ -372,6 +377,7 @@ type MdbxTx struct {
 	statelessCursors map[string]ethdb.Cursor
 	readOnly         bool
 	cursorID         uint64
+	putBuf           []byte // used by auto-dupsort feature, in put/append methods
 }
 
 type MdbxCursor struct {
@@ -778,7 +784,7 @@ func (tx *MdbxTx) Rollback() {
 }
 
 //nolint
-func (tx *MdbxTx) SpaceDirty() (uint64, uint64, error) {
+func (tx *MdbxTx) SpaceDirty() (dirty uint64, txSize uint64, err error) {
 	txInfo, err := tx.tx.Info(true)
 	if err != nil {
 		return 0, 0, err
@@ -1329,7 +1335,7 @@ func (c *MdbxCursor) putDupSort(key []byte, value []byte) error {
 		return nil
 	}
 
-	value = append(key[to:], value...)
+	value = append(append(c.tx.putBuf[:0], key[to:]...), value...)
 	key = key[:to]
 	v, err := c.getBothRange(key, value[:from-to])
 	if err != nil { // if key not found, or found another one - then just insert
@@ -1394,7 +1400,7 @@ func (c *MdbxCursor) Append(k []byte, v []byte) error {
 		}
 
 		if len(k) == from {
-			v = append(k[to:], v...)
+			v = append(append(c.tx.putBuf[:0], k[to:]...), v...)
 			k = k[:to]
 		}
 	}

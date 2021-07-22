@@ -39,7 +39,7 @@ func (cr *CachedReader) ReadAccountData(address common.Address) (*accounts.Accou
 }
 
 // ReadAccountStorage is called when a storage item needs to be fetched from the state
-func (cr *CachedReader) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (cr *CachedReader) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	addrBytes := address.Bytes()
 	if s, ok := cr.cache.GetStorage(addrBytes, incarnation, key.Bytes()); ok {
 		return s, nil

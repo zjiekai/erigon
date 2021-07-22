@@ -39,7 +39,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 			current uint256.Int
 			cost    = uint64(0)
 		)
-		evm.IntraBlockState.GetState(contract.Address(), &slot, &current)
+		evm.IntraBlockState.GetState(contract.Address(), slot, &current)
 		// Check slot presence in the access list
 		if addrPresent, slotPresent := evm.IntraBlockState.SlotInAccessList(contract.Address(), slot); !slotPresent {
 			cost = params.ColdSloadCostEIP2929
@@ -62,7 +62,7 @@ func makeGasSStoreFunc(clearingRefund uint64) gasFunc {
 		}
 		var original uint256.Int
 		slotCommited := common.Hash(x.Bytes32())
-		evm.IntraBlockState.GetCommittedState(contract.Address(), &slotCommited, &original)
+		evm.IntraBlockState.GetCommittedState(contract.Address(), slotCommited, &original)
 		if original.Eq(&current) {
 			if original.IsZero() { // create slot (2.1.1)
 				return cost + params.SstoreSetGasEIP2200, nil

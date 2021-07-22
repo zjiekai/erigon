@@ -85,9 +85,9 @@ func generateBlocks(t *testing.T, from uint64, numberOfBlocks uint64, stateWrite
 	acc2.Initialised = true
 	acc2.Balance.SetUint64(0)
 
-	testAccounts := []*accounts.Account{
-		&acc1,
-		&acc2,
+	testAccounts := []accounts.Account{
+		acc1,
+		acc2,
 	}
 
 	for blockNumber := uint64(1); blockNumber < from+numberOfBlocks; blockNumber++ {
@@ -97,7 +97,7 @@ func generateBlocks(t *testing.T, from uint64, numberOfBlocks uint64, stateWrite
 		for i, oldAcc := range testAccounts {
 			addr := common.HexToAddress(fmt.Sprintf("0x1234567890%d", i))
 
-			newAcc := oldAcc.SelfCopy()
+			newAcc := *oldAcc.SelfCopy()
 			newAcc.Balance.SetUint64(blockNumber)
 			if updateIncarnation && oldAcc.Incarnation > 0 /* only update for contracts */ {
 				newAcc.Incarnation = oldAcc.Incarnation + 1
@@ -129,7 +129,7 @@ func generateBlocks(t *testing.T, from uint64, numberOfBlocks uint64, stateWrite
 				var location common.Hash
 				location.SetBytes(big.NewInt(int64(blockNumber)).Bytes())
 				if blockNumber >= from {
-					if err := blockWriter.WriteAccountStorage(addr, newAcc.Incarnation, &location, &oldValue, &newValue); err != nil {
+					if err := blockWriter.WriteAccountStorage(addr, newAcc.Incarnation, location, oldValue, newValue); err != nil {
 						t.Fatal(err)
 					}
 				}

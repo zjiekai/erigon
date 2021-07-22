@@ -23,6 +23,7 @@ import (
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/consensus"
+	"github.com/ledgerwatch/erigon/core/state"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/core/vm"
 )
@@ -106,12 +107,12 @@ func GetHashFn(ref *types.Header, getHeader func(hash common.Hash, number uint64
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
-func CanTransfer(db vm.IntraBlockState, addr common.Address, amount *uint256.Int) bool {
+func CanTransfer(db *state.IntraBlockState, addr common.Address, amount *uint256.Int) bool {
 	return !db.GetBalance(addr).Lt(amount)
 }
 
 // Transfer subtracts amount from sender and adds amount to recipient using the given Db
-func Transfer(db vm.IntraBlockState, sender, recipient common.Address, amount *uint256.Int, bailout bool) {
+func Transfer(db *state.IntraBlockState, sender, recipient common.Address, amount *uint256.Int, bailout bool) {
 	if !bailout {
 		db.SubBalance(sender, amount)
 	}

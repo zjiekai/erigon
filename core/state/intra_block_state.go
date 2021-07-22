@@ -342,7 +342,7 @@ func (sdb *IntraBlockState) GetCodeHash(addr common.Address) common.Hash {
 
 // GetState retrieves a value from the given account's storage trie.
 // DESCRIBED: docs/programmers_guide/guide.md#address---identifier-of-an-account
-func (sdb *IntraBlockState) GetState(addr common.Address, key *common.Hash, value *uint256.Int) {
+func (sdb *IntraBlockState) GetState(addr common.Address, key common.Hash, value *uint256.Int) {
 	stateObject := sdb.getStateObject(addr)
 	if stateObject != nil && !stateObject.deleted {
 		stateObject.GetState(key, value)
@@ -353,7 +353,7 @@ func (sdb *IntraBlockState) GetState(addr common.Address, key *common.Hash, valu
 
 // GetCommittedState retrieves a value from the given account's committed storage trie.
 // DESCRIBED: docs/programmers_guide/guide.md#address---identifier-of-an-account
-func (sdb *IntraBlockState) GetCommittedState(addr common.Address, key *common.Hash, value *uint256.Int) {
+func (sdb *IntraBlockState) GetCommittedState(addr common.Address, key common.Hash, value *uint256.Int) {
 	stateObject := sdb.getStateObject(addr)
 	if stateObject != nil && !stateObject.deleted {
 		stateObject.GetCommittedState(key, value)
@@ -466,7 +466,7 @@ func (sdb *IntraBlockState) SetCode(addr common.Address, code []byte) {
 }
 
 // DESCRIBED: docs/programmers_guide/guide.md#address---identifier-of-an-account
-func (sdb *IntraBlockState) SetState(addr common.Address, key *common.Hash, value uint256.Int) {
+func (sdb *IntraBlockState) SetState(addr common.Address, key common.Hash, value uint256.Int) {
 	stateObject := sdb.GetOrNewStateObject(addr)
 	if stateObject != nil {
 		stateObject.SetState(key, value)
@@ -681,7 +681,7 @@ func (sdb *IntraBlockState) GetRefund() uint64 {
 func updateAccount(EIP158Enabled bool, stateWriter StateWriter, addr common.Address, stateObject *stateObject, isDirty bool) error {
 	emptyRemoval := EIP158Enabled && stateObject.empty()
 	if stateObject.suicided || (isDirty && emptyRemoval) {
-		if err := stateWriter.DeleteAccount(addr, &stateObject.original); err != nil {
+		if err := stateWriter.DeleteAccount(addr, stateObject.original); err != nil {
 			return err
 		}
 		stateObject.deleted = true
@@ -702,7 +702,7 @@ func updateAccount(EIP158Enabled bool, stateWriter StateWriter, addr common.Addr
 		if err := stateObject.updateTrie(stateWriter); err != nil {
 			return err
 		}
-		if err := stateWriter.UpdateAccountData(addr, &stateObject.original, &stateObject.data); err != nil {
+		if err := stateWriter.UpdateAccountData(addr, stateObject.original, stateObject.data); err != nil {
 			return err
 		}
 	}

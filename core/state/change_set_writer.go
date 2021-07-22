@@ -58,7 +58,7 @@ func (w *ChangeSetWriter) GetStorageChanges() (*changeset.ChangeSet, error) {
 	return cs, nil
 }
 
-func accountsEqual(a1, a2 *accounts.Account) bool {
+func accountsEqual(a1, a2 accounts.Account) bool {
 	if a1.Nonce != a2.Nonce {
 		return false
 	}
@@ -83,7 +83,7 @@ func accountsEqual(a1, a2 *accounts.Account) bool {
 	return true
 }
 
-func (w *ChangeSetWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (w *ChangeSetWriter) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	if !accountsEqual(original, account) || w.storageChanged[address] {
 		w.accountChanges[address] = originalAccountData(original, true /*omitHashes*/)
 	}
@@ -94,13 +94,13 @@ func (w *ChangeSetWriter) UpdateAccountCode(address common.Address, incarnation 
 	return nil
 }
 
-func (w *ChangeSetWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (w *ChangeSetWriter) DeleteAccount(address common.Address, original accounts.Account) error {
 	w.accountChanges[address] = originalAccountData(original, false)
 	return nil
 }
 
-func (w *ChangeSetWriter) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
-	if *original == *value {
+func (w *ChangeSetWriter) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
+	if original == value {
 		return nil
 	}
 

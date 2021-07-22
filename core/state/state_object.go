@@ -155,8 +155,8 @@ func (so *stateObject) touch() {
 }
 
 // GetState returns a value from account storage.
-func (so *stateObject) GetState(key *common.Hash, out *uint256.Int) {
-	value, dirty := so.dirtyStorage[*key]
+func (so *stateObject) GetState(key common.Hash, out *uint256.Int) {
+	value, dirty := so.dirtyStorage[key]
 	if dirty {
 		*out = value
 		return
@@ -166,10 +166,10 @@ func (so *stateObject) GetState(key *common.Hash, out *uint256.Int) {
 }
 
 // GetCommittedState retrieves a value from the committed account storage trie.
-func (so *stateObject) GetCommittedState(key *common.Hash, out *uint256.Int) {
+func (so *stateObject) GetCommittedState(key common.Hash, out *uint256.Int) {
 	// If we have the original value cached, return that
 	{
-		value, cached := so.originStorage[*key]
+		value, cached := so.originStorage[key]
 		if cached {
 			*out = value
 			return
@@ -191,12 +191,12 @@ func (so *stateObject) GetCommittedState(key *common.Hash, out *uint256.Int) {
 	} else {
 		out.Clear()
 	}
-	so.originStorage[*key] = *out
-	so.blockOriginStorage[*key] = *out
+	so.originStorage[key] = *out
+	so.blockOriginStorage[key] = *out
 }
 
 // SetState updates a value in account storage.
-func (so *stateObject) SetState(key *common.Hash, value uint256.Int) {
+func (so *stateObject) SetState(key common.Hash, value uint256.Int) {
 	// If the new value is the same as old, don't set
 	var prev uint256.Int
 	so.GetState(key, &prev)
@@ -206,7 +206,7 @@ func (so *stateObject) SetState(key *common.Hash, value uint256.Int) {
 	// New value is different, update and journal the change
 	so.db.journal.append(storageChange{
 		account:  &so.address,
-		key:      *key,
+		key:      key,
 		prevalue: prev,
 	})
 	so.setState(key, value)
@@ -230,8 +230,8 @@ func (so *stateObject) SetStorage(storage Storage) {
 	// debugging and the `fake` storage won't be committed to database.
 }
 
-func (so *stateObject) setState(key *common.Hash, value uint256.Int) {
-	so.dirtyStorage[*key] = value
+func (so *stateObject) setState(key common.Hash, value uint256.Int) {
+	so.dirtyStorage[key] = value
 }
 
 // updateTrie writes cached storage modifications into the object's storage trie.
@@ -240,7 +240,7 @@ func (so *stateObject) updateTrie(stateWriter StateWriter) error {
 		value := value
 		original := so.blockOriginStorage[key]
 		so.originStorage[key] = value
-		if err := stateWriter.WriteAccountStorage(so.address, so.data.GetIncarnation(), &key, &original, &value); err != nil {
+		if err := stateWriter.WriteAccountStorage(so.address, so.data.GetIncarnation(), key, original, value); err != nil {
 			return err
 		}
 	}

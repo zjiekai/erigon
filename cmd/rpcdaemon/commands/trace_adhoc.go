@@ -364,7 +364,7 @@ type StateDiff struct {
 	sdMap map[common.Address]*StateDiffAccount
 }
 
-func (sd *StateDiff) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (sd *StateDiff) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	if _, ok := sd.sdMap[address]; !ok {
 		sd.sdMap[address] = &StateDiffAccount{Storage: make(map[common.Hash]map[string]interface{})}
 	}
@@ -378,15 +378,15 @@ func (sd *StateDiff) UpdateAccountCode(address common.Address, incarnation uint6
 	return nil
 }
 
-func (sd *StateDiff) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (sd *StateDiff) DeleteAccount(address common.Address, original accounts.Account) error {
 	if _, ok := sd.sdMap[address]; !ok {
 		sd.sdMap[address] = &StateDiffAccount{Storage: make(map[common.Hash]map[string]interface{})}
 	}
 	return nil
 }
 
-func (sd *StateDiff) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
-	if *original == *value {
+func (sd *StateDiff) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
+	if original == value {
 		return nil
 	}
 	accountDiff := sd.sdMap[address]
@@ -396,7 +396,7 @@ func (sd *StateDiff) WriteAccountStorage(address common.Address, incarnation uin
 	}
 	m := make(map[string]interface{})
 	m["*"] = &StateDiffStorage{From: common.BytesToHash(original.Bytes()), To: common.BytesToHash(value.Bytes())}
-	accountDiff.Storage[*key] = m
+	accountDiff.Storage[key] = m
 	return nil
 }
 

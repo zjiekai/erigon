@@ -73,7 +73,7 @@ func (dbr *DbStateReader) ReadAccountData(address common.Address) (*accounts.Acc
 	return acc, nil
 }
 
-func (dbr *DbStateReader) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (dbr *DbStateReader) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	addrHash, err := common.HashData(address[:])
 	if err != nil {
 		return nil, err

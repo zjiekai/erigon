@@ -18,7 +18,7 @@ func NewCachedWriter(w WriterWithChangeSets, cache *shards.StateCache) *CachedWr
 	return &CachedWriter{w: w, cache: cache}
 }
 
-func (cw *CachedWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (cw *CachedWriter) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	if err := cw.w.UpdateAccountData(address, original, account); err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func (cw *CachedWriter) UpdateAccountCode(address common.Address, incarnation ui
 	return nil
 }
 
-func (cw *CachedWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (cw *CachedWriter) DeleteAccount(address common.Address, original accounts.Account) error {
 	if err := cw.w.DeleteAccount(address, original); err != nil {
 		return err
 	}
@@ -42,11 +42,11 @@ func (cw *CachedWriter) DeleteAccount(address common.Address, original *accounts
 	return nil
 }
 
-func (cw *CachedWriter) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (cw *CachedWriter) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	if err := cw.w.WriteAccountStorage(address, incarnation, key, original, value); err != nil {
 		return err
 	}
-	if *original == *value {
+	if original == value {
 		return nil
 	}
 	if value.IsZero() {

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/c2h5oh/datasize"
-	"github.com/ledgerwatch/erigon/ethdb/kv"
 	"github.com/ledgerwatch/erigon/ethdb/prune"
 
 	"github.com/ledgerwatch/erigon/common"
@@ -94,7 +93,7 @@ func readBlock(blockNum uint64, tx ethdb.Tx) (*types.Block, error) {
 func executeBlock(
 	block *types.Block,
 	tx ethdb.RwTx,
-	batch ethdb.Database,
+	batch ethdb.RwTx,
 	cfg ExecuteBlockCfg,
 	vmConfig vm.Config, // emit copy, because will modify it
 	writeChangesets bool,
@@ -185,7 +184,7 @@ func executeBlock(
 }
 
 func newStateReaderWriter(
-	batch ethdb.Database,
+	batch ethdb.RwTx,
 	tx ethdb.RwTx,
 	blockNum uint64,
 	blockHash common.Hash,
@@ -247,10 +246,6 @@ func SpawnExecuteBlocksStage(s *StageState, u Unwinder, tx ethdb.RwTx, toBlock u
 		log.Info(fmt.Sprintf("[%s] Blocks execution", logPrefix), "from", s.BlockNumber, "to", to)
 	}
 
-	var batch ethdb.DbWithPendingMutations
-	batch = kv.NewBatch(tx, quit)
-	defer batch.Rollback()
-
 	logEvery := time.NewTicker(logInterval)
 	defer logEvery.Stop()
 	stageProgress := s.BlockNumber
@@ -291,19 +286,19 @@ Loop:
 		writeChangeSets := nextStagesExpectData || blockNum > cfg.prune.History.PruneTo(to)
 		writeReceipts := nextStagesExpectData || blockNum > cfg.prune.Receipts.PruneTo(to)
 		writeCallTraces := nextStagesExpectData || blockNum > cfg.prune.CallTraces.PruneTo(to)
-		if err = executeBlock(block, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, checkTEVMCode, initialCycle); err != nil {
+		if err = executeBlock(block, tx, tx, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, checkTEVMCode, initialCycle); err != nil {
 			log.Error(fmt.Sprintf("[%s] Execution failed", logPrefix), "block", blockNum, "hash", block.Hash().String(), "error", err)
 			u.UnwindTo(blockNum-1, block.Hash())
 			break Loop
 		}
 		stageProgress = blockNum
-
-		updateProgress := batch.BatchSize() >= int(cfg.batchSize)
-		if updateProgress {
-			if err = batch.Commit(); err != nil {
+		if blockNum%100 == 0 {
+			txDirty, txLimit, err := tx.SpaceDirty()
+			if err != nil {
 				return err
 			}
-			if !useExternalTx {
+			updateProgress := txDirty > (txLimit/10)*9 && !useExternalTx
+			if updateProgress {
 				if err = s.Update(tx, stageProgress); err != nil {
 					return err
 				}
@@ -317,9 +312,6 @@ Loop:
 				// TODO: This creates stacked up deferrals
 				defer tx.Rollback()
 			}
-			batch = kv.NewBatch(tx, quit)
-			// TODO: This creates stacked up deferrals
-			defer batch.Rollback()
 		}
 
 		gas = gas + block.GasUsed()
@@ -327,18 +319,15 @@ Loop:
 		select {
 		default:
 		case <-logEvery.C:
-			logBlock, logTx, logTime = logProgress(logPrefix, logBlock, logTime, blockNum, logTx, lastLogTx, gas, batch)
+			logBlock, logTx, logTime = logProgress(logPrefix, logBlock, logTime, blockNum, logTx, lastLogTx, gas, nil)
 			gas = 0
 			tx.CollectMetrics()
 			stageExecutionGauge.Update(int64(blockNum))
 		}
 	}
 
-	if err = s.Update(batch, stageProgress); err != nil {
+	if err = s.Update(tx, stageProgress); err != nil {
 		return err
-	}
-	if err = batch.Commit(); err != nil {
-		return fmt.Errorf("%s: failed to write batch commit: %v", logPrefix, err)
 	}
 
 	if !useExternalTx {

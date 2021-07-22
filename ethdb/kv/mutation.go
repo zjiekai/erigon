@@ -235,6 +235,9 @@ func (m *mutation) doCommit(tx ethdb.RwTx) error {
 	}
 
 	for table := range m.puts {
+		if m.puts[table].Len() == 0 {
+			continue
+		}
 		c, err := tx.RwCursor(table)
 		if err != nil {
 			return err

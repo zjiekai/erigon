@@ -66,11 +66,7 @@ func (m *mutation) RwKV() ethdb.RwKV {
 func (m *mutation) getMem(table string, key []byte) ([]byte, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	v := m.puts[table].Get(key)
-	if v == nil {
-		return nil, false
-	}
-	return v, true
+	return m.puts[table].Get(key)
 }
 
 func (m *mutation) IncrementSequence(bucket string, amount uint64) (res uint64, err error) {

@@ -44,6 +44,7 @@ func NewBatch(tx ethdb.RwTx, quit <-chan struct{}) *mutation {
 		db:    &TxDb{tx: tx, cursors: map[string]ethdb.Cursor{}},
 		quit:  quit,
 		clean: clean,
+		puts:  map[string]*bytebtree.BTree{},
 	}
 	buckets, err := tx.ExistingBuckets()
 	if err != nil {

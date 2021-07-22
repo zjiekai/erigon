@@ -177,9 +177,13 @@ func (hd *HeaderDownload) extendUp(segment *ChainSegment, start, end int) error 
 		return fmt.Errorf("cannot extendUp from preverified link %d with children", attachmentLink.blockHeight)
 	}
 	// Iterate over headers backwards (from parents towards children)
+	_, bad := hd.badHeaders[attachmentLink.hash]
 	prevLink := attachmentLink
 	for i := end - 1; i >= start; i-- {
 		link := hd.addHeaderAsLink(segment.Headers[i], false /* persisted */)
+		if bad {
+			hd.badHeaders[link.hash] = struct{}{}
+		}
 		prevLink.next = append(prevLink.next, link)
 		prevLink = link
 		if _, ok := hd.preverifiedHashes[link.hash]; ok {
@@ -284,8 +288,12 @@ func (hd *HeaderDownload) connect(segment *ChainSegment, start, end int) ([]Pena
 	delete(hd.anchors, anchor.parentHash)
 	// Iterate over headers backwards (from parents towards children)
 	prevLink := attachmentLink
+	_, bad := hd.badHeaders[attachmentLink.hash]
 	for i := end - 1; i >= start; i-- {
 		link := hd.addHeaderAsLink(segment.Headers[i], false /* persisted */)
+		if bad {
+			hd.badHeaders[link.hash] = struct{}{}
+		}
 		prevLink.next = append(prevLink.next, link)
 		prevLink = link
 		if !anchorPreverified {
@@ -301,7 +309,7 @@ func (hd *HeaderDownload) connect(segment *ChainSegment, start, end int) ([]Pena
 		hd.markPreverified(prevLink)
 	}
 	var penalties []PenaltyItem
-	if _, bad := hd.badHeaders[attachmentLink.hash]; bad {
+	if bad {
 		hd.invalidateAnchor(anchor)
 		penalties = append(penalties, PenaltyItem{Penalty: AbandonedAnchorPenalty, PeerID: anchor.peerID})
 	} else if attachmentLink.persisted {

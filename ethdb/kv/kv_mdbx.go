@@ -184,8 +184,8 @@ func (opts MdbxOpts) Open() (ethdb.RwKV, error) {
 		if err = env.SetOption(mdbx.OptDpReverseLimit, 16*1024); err != nil {
 			return nil, err
 		}
-		newDpLimit := defaultDirtyPagesLimit * 4
-		maxDpLimit := uint64(1*datasize.GB) / uint64(pageSize)
+		newDpLimit := defaultDirtyPagesLimit * 8
+		maxDpLimit := uint64(2*datasize.GB) / uint64(pageSize)
 		if newDpLimit > maxDpLimit {
 			newDpLimit = maxDpLimit
 		}

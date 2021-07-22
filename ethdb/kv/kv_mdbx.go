@@ -56,7 +56,7 @@ func testKVPath() string {
 func NewMDBX() MdbxOpts {
 	return MdbxOpts{
 		bucketsCfg: DefaultBucketConfigs,
-		flags:      mdbx.NoReadahead | mdbx.Coalesce | mdbx.Durable,
+		flags:      mdbx.Coalesce | mdbx.Durable,
 	}
 }
 

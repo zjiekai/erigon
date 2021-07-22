@@ -69,11 +69,6 @@ type Database interface {
 	Deleter
 	Closer
 
-	// MultiPut inserts or updates multiple entries.
-	// Entries are passed as an array:
-	// bucket0, key0, val0, bucket1, key1, val1, ...
-	MultiPut(tuples ...[]byte) (uint64, error)
-
 	Begin(ctx context.Context, flags TxFlags) (DbWithPendingMutations, error) // starts db transaction
 	Last(bucket string) ([]byte, []byte, error)
 

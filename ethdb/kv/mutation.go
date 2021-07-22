@@ -1,17 +1,14 @@
 package kv
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
-	"unsafe"
 
-	"github.com/google/btree"
+	"github.com/AskAlexSharov/bytebtree"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/dbutils"
 	"github.com/ledgerwatch/erigon/ethdb"
@@ -19,19 +16,12 @@ import (
 )
 
 type mutation struct {
-	puts       *btree.BTree
-	db         ethdb.Database
-	searchItem MutationItem
-	quit       <-chan struct{}
-	clean      func()
-	mu         sync.RWMutex
-	size       int
-}
-
-type MutationItem struct {
-	table string
-	key   []byte
-	value []byte
+	puts  map[string]*bytebtree.BTree
+	db    ethdb.Database
+	quit  <-chan struct{}
+	clean func()
+	mu    sync.RWMutex
+	size  int
 }
 
 // NewBatch - starts in-mem batch
@@ -49,21 +39,20 @@ func NewBatch(tx ethdb.RwTx, quit <-chan struct{}) *mutation {
 		clean = func() { close(ch) }
 		quit = ch
 	}
-	return &mutation{
+
+	m := &mutation{
 		db:    &TxDb{tx: tx, cursors: map[string]ethdb.Cursor{}},
-		puts:  btree.New(32),
 		quit:  quit,
 		clean: clean,
 	}
-}
-
-func (mi *MutationItem) Less(than btree.Item) bool {
-	i := than.(*MutationItem)
-	c := strings.Compare(mi.table, i.table)
-	if c != 0 {
-		return c < 0
+	buckets, err := tx.ExistingBuckets()
+	if err != nil {
+		panic(err)
 	}
-	return bytes.Compare(mi.key, i.key) < 0
+	for i := range buckets {
+		m.puts[buckets[i]] = bytebtree.New(32)
+	}
+	return m
 }
 
 func (m *mutation) RwKV() ethdb.RwKV {
@@ -76,13 +65,11 @@ func (m *mutation) RwKV() ethdb.RwKV {
 func (m *mutation) getMem(table string, key []byte) ([]byte, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	m.searchItem.table = table
-	m.searchItem.key = key
-	i := m.puts.Get(&m.searchItem)
-	if i == nil {
+	v := m.puts[table].Get(key)
+	if v == nil {
 		return nil, false
 	}
-	return i.(*MutationItem).value, true
+	return v, true
 }
 
 func (m *mutation) IncrementSequence(bucket string, amount uint64) (res uint64, err error) {
@@ -163,9 +150,7 @@ func (m *mutation) Last(table string) ([]byte, []byte, error) {
 func (m *mutation) hasMem(table string, key []byte) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	m.searchItem.table = table
-	m.searchItem.key = key
-	return m.puts.Has(&m.searchItem)
+	return m.puts[table].Has(key)
 }
 
 func (m *mutation) Has(table string, key []byte) (bool, error) {
@@ -182,12 +167,10 @@ func (m *mutation) Put(table string, key []byte, value []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	newMi := &MutationItem{table: table, key: key, value: value}
-	i := m.puts.ReplaceOrInsert(newMi)
-	m.size += int(unsafe.Sizeof(newMi)) + len(key) + len(value)
-	if i != nil {
-		oldMi := i.(*MutationItem)
-		m.size -= (int(unsafe.Sizeof(oldMi)) + len(oldMi.key) + len(oldMi.value))
+	oldK, oldV := m.puts[table].ReplaceOrInsert(key, value)
+	m.size += len(key) + len(value)
+	if oldK != nil {
+		m.size -= len(oldK) + len(oldV)
 	}
 	return nil
 }
@@ -198,22 +181,6 @@ func (m *mutation) Append(table string, key []byte, value []byte) error {
 
 func (m *mutation) AppendDup(table string, key []byte, value []byte) error {
 	return m.Put(table, key, value)
-}
-
-func (m *mutation) MultiPut(tuples ...[]byte) (uint64, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	l := len(tuples)
-	for i := 0; i < l; i += 3 {
-		newMi := &MutationItem{table: string(tuples[i]), key: tuples[i+1], value: tuples[i+2]}
-		i := m.puts.ReplaceOrInsert(newMi)
-		m.size += int(unsafe.Sizeof(newMi)) + len(newMi.key) + len(newMi.value)
-		if i != nil {
-			oldMi := i.(*MutationItem)
-			m.size -= (int(unsafe.Sizeof(oldMi)) + len(oldMi.key) + len(oldMi.value))
-		}
-	}
-	return 0, nil
 }
 
 func (m *mutation) BatchSize() int {
@@ -256,68 +223,68 @@ func (m *mutation) RollbackAndBegin(ctx context.Context) error {
 }
 
 func (m *mutation) doCommit(tx ethdb.RwTx) error {
-	var prevTable string
-	var c ethdb.RwCursor
 	var innerErr error
 	var isEndOfBucket bool
 	logEvery := time.NewTicker(30 * time.Second)
 	defer logEvery.Stop()
 	count := 0
-	total := float64(m.puts.Len())
+	total := float64(0)
+	for i := range m.puts {
+		total += float64(m.puts[i].Len())
+	}
 
-	m.puts.Ascend(func(i btree.Item) bool {
-		mi := i.(*MutationItem)
-		if mi.table != prevTable {
-			if c != nil {
-				c.Close()
-			}
-			var err error
-			c, err = tx.RwCursor(mi.table)
-			if err != nil {
-				innerErr = err
-				return false
-			}
-			prevTable = mi.table
-			firstKey, _, err := c.Seek(mi.key)
-			if err != nil {
-				innerErr = err
-				return false
-			}
-			isEndOfBucket = firstKey == nil
+	for table := range m.puts {
+		c, err := tx.RwCursor(table)
+		if err != nil {
+			return err
 		}
-		if isEndOfBucket {
-			if len(mi.value) > 0 {
-				if err := c.Append(mi.key, mi.value); err != nil {
+		first := true
+		m.puts[table].Ascend(func(k, v []byte) bool {
+			if first {
+				first = false
+				firstKey, _, err := c.Seek(k)
+				if err != nil {
+					innerErr = err
+					return false
+				}
+				isEndOfBucket = firstKey == nil
+			}
+			if isEndOfBucket {
+				if len(k) > 0 {
+					if err := c.Append(k, v); err != nil {
+						innerErr = err
+						return false
+					}
+				}
+			} else if len(v) == 0 {
+				if err := c.Delete(k, nil); err != nil {
+					innerErr = err
+					return false
+				}
+			} else {
+				if err := c.Put(k, v); err != nil {
 					innerErr = err
 					return false
 				}
 			}
-		} else if len(mi.value) == 0 {
-			if err := c.Delete(mi.key, nil); err != nil {
-				innerErr = err
-				return false
-			}
-		} else {
-			if err := c.Put(mi.key, mi.value); err != nil {
-				innerErr = err
-				return false
-			}
-		}
 
-		count++
+			count++
 
-		select {
-		default:
-		case <-logEvery.C:
-			progress := fmt.Sprintf("%.1fM/%.1fM", float64(count)/1_000_000, total/1_000_000)
-			log.Info("Write to db", "progress", progress, "current table", mi.table)
-			tx.CollectMetrics()
-		case <-m.quit:
-			innerErr = common.ErrStopped
-			return false
-		}
-		return true
-	})
+			select {
+			case <-logEvery.C:
+				progress := fmt.Sprintf("%.1fM/%.1fM", float64(count)/1_000_000, total/1_000_000)
+				log.Info("Write to db", "progress", progress)
+				tx.CollectMetrics()
+			case <-m.quit:
+				innerErr = common.ErrStopped
+				return false
+			default:
+			}
+			return true
+		})
+		c.Close()
+	}
+
 	tx.CollectMetrics()
 	return innerErr
 }
@@ -340,7 +307,9 @@ func (m *mutation) Commit() error {
 		}
 	}
 
-	m.puts.Clear(false /* addNodesToFreelist */)
+	for i := range m.puts {
+		m.puts[i].Clear(false)
+	}
 	m.size = 0
 	m.clean()
 	return nil
@@ -349,7 +318,9 @@ func (m *mutation) Commit() error {
 func (m *mutation) Rollback() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.puts.Clear(false /* addNodesToFreelist */)
+	for i := range m.puts {
+		m.puts[i].Clear(false)
+	}
 	m.size = 0
 	m.clean()
 }

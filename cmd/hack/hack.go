@@ -2064,7 +2064,7 @@ func aggregatePlainState(chaindata string) error {
 	bucketInf := 0
 	for v := range uniqueValues {
 		totalUniqueSize += len(v)
-		switch true {
+		switch {
 		case len(v) <= 5:
 			bucket5++
 		case len(v) <= 10:

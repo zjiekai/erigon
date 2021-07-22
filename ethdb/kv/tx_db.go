@@ -244,10 +244,6 @@ func (m *TxDb) Has(bucket string, key []byte) (bool, error) {
 	return v != nil, nil
 }
 
-func (m *TxDb) MultiPut(tuples ...[]byte) (uint64, error) {
-	return 0, ethdb.MultiPut(m.tx.(ethdb.RwTx), tuples...)
-}
-
 func (m *TxDb) BatchSize() int {
 	return int(m.len)
 }

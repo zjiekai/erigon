@@ -96,17 +96,6 @@ func (db *ObjectDatabase) AppendDup(bucket string, key []byte, value []byte) err
 	return err
 }
 
-// MultiPut - requirements: input must be sorted and without duplicates
-func (db *ObjectDatabase) MultiPut(tuples ...[]byte) (uint64, error) {
-	err := db.kv.Update(context.Background(), func(tx ethdb.RwTx) error {
-		return ethdb.MultiPut(tx, tuples...)
-	})
-	if err != nil {
-		return 0, err
-	}
-	return 0, nil
-}
-
 func (db *ObjectDatabase) Has(bucket string, key []byte) (bool, error) {
 	var has bool
 	err := db.kv.View(context.Background(), func(tx ethdb.Tx) error {

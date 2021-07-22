@@ -61,8 +61,8 @@ type StateTransition struct {
 	evm        *vm.EVM
 
 	//some pre-allocated intermediate variables
-	sharedBuyGas        *uint256.Int
-	sharedBuyGasBalance *uint256.Int
+	sharedU256    *uint256.Int
+	sharedU256Two *uint256.Int
 }
 
 // Message represents a message sent to a contract.
@@ -171,8 +171,8 @@ func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition 
 		data:      msg.Data(),
 		state:     evm.IntraBlockState,
 
-		sharedBuyGas:        uint256.NewInt(0),
-		sharedBuyGasBalance: uint256.NewInt(0),
+		sharedU256:    uint256.NewInt(0),
+		sharedU256Two: uint256.NewInt(0),
 	}
 }
 
@@ -199,12 +199,12 @@ func (st *StateTransition) to() common.Address {
 }
 
 func (st *StateTransition) buyGas(gasBailout bool) error {
-	mgval := st.sharedBuyGas
+	mgval := st.sharedU256
 	mgval.SetUint64(st.msg.Gas())
 	mgval = mgval.Mul(mgval, st.gasPrice)
 	balanceCheck := mgval
 	if st.gasFeeCap != nil {
-		balanceCheck = st.sharedBuyGasBalance.SetUint64(st.msg.Gas())
+		balanceCheck = st.sharedU256Two.SetUint64(st.msg.Gas())
 		balanceCheck = balanceCheck.Mul(balanceCheck, st.gasFeeCap)
 	}
 	balanceCheck.Add(balanceCheck, st.value)
@@ -349,9 +349,10 @@ func (st *StateTransition) TransitionDb(refunds bool, gasBailout bool) (*Executi
 	}
 	effectiveTip := st.gasPrice
 	if st.evm.ChainRules.IsLondon {
-		effectiveTip = cmath.Min256(st.tip, new(uint256.Int).Sub(st.gasFeeCap, st.evm.Context.BaseFee))
+		effectiveTip = cmath.Min256(st.tip, st.sharedU256.Sub(st.gasFeeCap, st.evm.Context.BaseFee))
 	}
-	st.state.AddBalance(st.evm.Context.Coinbase, new(uint256.Int).Mul(new(uint256.Int).SetUint64(st.gasUsed()), effectiveTip))
+
+	st.state.AddBalance(st.evm.Context.Coinbase, st.sharedU256.Mul(st.sharedU256Two.SetUint64(st.gasUsed()), effectiveTip))
 
 	return &ExecutionResult{
 		UsedGas:    st.gasUsed(),
@@ -369,7 +370,8 @@ func (st *StateTransition) refundGas(refundQuotient uint64) {
 	st.gas += refund
 
 	// Return ETH for remaining gas, exchanged at the original rate.
-	remaining := new(uint256.Int).Mul(new(uint256.Int).SetUint64(st.gas), st.gasPrice)
+
+	remaining := st.sharedU256.Mul(st.sharedU256Two.SetUint64(st.gas), st.gasPrice)
 	st.state.AddBalance(st.msg.From(), remaining)
 
 	// Also return remaining gas to the block gas counter so it is

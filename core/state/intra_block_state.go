@@ -77,6 +77,8 @@ type IntraBlockState struct {
 	tracer         StateTracer
 	trace          bool
 	accessList     *accessList
+
+	balanceBuf *uint256.Int
 }
 
 // Create a new state from a given trie
@@ -89,6 +91,7 @@ func New(stateReader StateReader) *IntraBlockState {
 		logs:              make(map[common.Hash][]*types.Log),
 		journal:           newJournal(),
 		accessList:        newAccessList(),
+		balanceBuf:        uint256.NewInt(0),
 	}
 }
 

@@ -372,6 +372,7 @@ type MdbxTx struct {
 	statelessCursors map[string]ethdb.Cursor
 	readOnly         bool
 	cursorID         uint64
+	putBuf           []byte // used by auto-dupsort feature, in put/append methods
 }
 
 type MdbxCursor struct {
@@ -1329,8 +1330,9 @@ func (c *MdbxCursor) putDupSort(key []byte, value []byte) error {
 		return nil
 	}
 
-	value = append(key[to:], value...)
+	value = append(append(c.tx.putBuf[:0], key[to:]...), value...)
 	key = key[:to]
+
 	v, err := c.getBothRange(key, value[:from-to])
 	if err != nil { // if key not found, or found another one - then just insert
 		if mdbx.IsNotFound(err) {
@@ -1394,7 +1396,7 @@ func (c *MdbxCursor) Append(k []byte, v []byte) error {
 		}
 
 		if len(k) == from {
-			v = append(k[to:], v...)
+			v = append(append(c.tx.putBuf[:0], k[to:]...), v...)
 			k = k[:to]
 		}
 	}

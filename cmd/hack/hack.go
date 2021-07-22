@@ -2032,6 +2032,7 @@ func aggregatePlainState(chaindata string) error {
 	defer logEvery.Stop()
 	totalNonUniqueSize := 0
 	uniqueValues := map[string]int{}
+	nonces := map[uint64]int{}
 	if err := tx.ForEach(dbutils.PlainStateBucket, nil, func(k, v []byte) error {
 		if len(k) != 20 {
 			return nil
@@ -2045,7 +2046,14 @@ func aggregatePlainState(chaindata string) error {
 		if _, ok := uniqueValues[string(v)]; ok {
 			uniqueValues[string(v)]++
 		} else {
-			uniqueValues[string(v)] = 0
+			uniqueValues[string(v)] = 1
+		}
+		a := accounts.NewAccount()
+		a.DecodeForStorage(v)
+		if _, ok := nonces[a.Nonce]; ok {
+			nonces[a.Nonce]++
+		} else {
+			nonces[a.Nonce] = 1
 		}
 		return nil
 	}); err != nil {
@@ -2075,7 +2083,28 @@ func aggregatePlainState(chaindata string) error {
 			bucketInf++
 		}
 	}
-	fmt.Printf("buckets: 5=%d, 10=%d, 20=%d, inf=%d\n", bucket5, bucket10, bucket20, bucketInf)
+	fmt.Printf("unique buckets: 5=%d, 10=%d, 20=%d, inf=%d\n", bucket5, bucket10, bucket20, bucketInf)
+	bucket1 := 0
+	bucket5 = 0
+	bucket10 = 0
+	bucket20 = 0
+	bucketInf = 0
+	for v := range uniqueValues {
+		totalUniqueSize += len(v)
+		switch {
+		case len(v) <= 1:
+			bucket1++
+		case len(v) <= 5:
+			bucket5++
+		case len(v) <= 10:
+			bucket10++
+		case len(v) <= 20:
+			bucket20++
+		default:
+			bucketInf++
+		}
+	}
+	fmt.Printf("nonce buckets: 1=%d, 5=%d, 10=%d, 20=%d, inf=%d\n", bucket1, bucket5, bucket10, bucket20, bucketInf)
 
 	return nil
 }

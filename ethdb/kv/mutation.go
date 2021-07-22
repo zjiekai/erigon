@@ -51,7 +51,7 @@ func NewBatch(tx ethdb.RwTx, quit <-chan struct{}) *mutation {
 		panic(err)
 	}
 	for i := range buckets {
-		m.puts[buckets[i]] = bytebtree.New(32)
+		m.puts[buckets[i]] = bytebtree.New()
 	}
 	return m
 }

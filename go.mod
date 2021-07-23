@@ -3,7 +3,7 @@ module github.com/ledgerwatch/erigon
 go 1.16
 
 require (
-	github.com/AskAlexSharov/bytebtree v1.0.7
+	github.com/AskAlexSharov/bytebtree v1.0.8
 	github.com/RoaringBitmap/roaring v0.6.0
 	github.com/VictoriaMetrics/fastcache v1.6.0
 	github.com/anacrolix/log v0.8.0

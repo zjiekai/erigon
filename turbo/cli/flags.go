@@ -71,19 +71,19 @@ var (
 		Value: "disabled",
 	}
 	PruneHistoryFlag = cli.Uint64Flag{
-		Name:  "prune.history.older",
+		Name:  "prune.h.older",
 		Usage: `Prune data after this amount of blocks (if --prune flag has 'h', then default is 90K)`,
 	}
 	PruneReceiptFlag = cli.Uint64Flag{
-		Name:  "prune.receipt.older",
+		Name:  "prune.r.older",
 		Usage: `Prune data after this amount of blocks (if --prune flag has 'r', then default is 90K)`,
 	}
 	PruneTxIndexFlag = cli.Uint64Flag{
-		Name:  "prune.txindex.older",
+		Name:  "prune.t.older",
 		Usage: `Prune data after this amount of blocks (if --prune flag has 't', then default is 90K)`,
 	}
 	PruneCallTracesFlag = cli.Uint64Flag{
-		Name:  "prune.calltrace.older",
+		Name:  "prune.c.older",
 		Usage: `Prune data after this amount of blocks (if --prune flag has 'c', then default is 90K)`,
 	}
 	ExperimentsFlag = cli.StringFlag{
@@ -149,6 +149,12 @@ var (
 		Usage: "Sets the minimum time between sync loop starts (e.g. 1h30m, default is none)",
 		Value: "",
 	}
+
+	BadBlockFlag = cli.IntFlag{
+		Name:  "bad.block",
+		Usage: "Marks block with given number bad and forces initial reorg before normal staged sync",
+		Value: 0,
+	}
 )
 
 func ApplyFlagsForEthConfig(ctx *cli.Context, cfg *ethconfig.Config) {
@@ -201,6 +207,7 @@ func ApplyFlagsForEthConfig(ctx *cli.Context, cfg *ethconfig.Config) {
 		}
 		cfg.SyncLoopThrottle = syncLoopThrottle
 	}
+	cfg.BadBlock = uint64(ctx.GlobalInt(BadBlockFlag.Name))
 }
 
 func ApplyFlagsForEthConfigCobra(f *pflag.FlagSet, cfg *ethconfig.Config) {

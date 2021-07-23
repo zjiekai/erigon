@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/holiman/uint256"
+	"github.com/ledgerwatch/erigon/core/state"
 
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/u256"
@@ -36,9 +37,9 @@ var emptyCodeHash = crypto.Keccak256Hash(nil)
 
 type (
 	// CanTransferFunc is the signature of a transfer guard function
-	CanTransferFunc func(IntraBlockState, common.Address, *uint256.Int) bool
+	CanTransferFunc func(*state.IntraBlockState, common.Address, *uint256.Int) bool
 	// TransferFunc is the signature of a transfer function
-	TransferFunc func(IntraBlockState, common.Address, common.Address, *uint256.Int, bool)
+	TransferFunc func(*state.IntraBlockState, common.Address, common.Address, *uint256.Int, bool)
 	// GetHashFunc returns the nth block hash in the blockchain
 	// and is used by the BLOCKHASH EVM op code.
 	GetHashFunc func(uint64) common.Hash
@@ -140,7 +141,7 @@ type EVM struct {
 	Context BlockContext
 	TxContext
 	// IntraBlockState gives access to the underlying state
-	IntraBlockState IntraBlockState
+	IntraBlockState *state.IntraBlockState
 	// Depth is the current call stack
 	depth int
 
@@ -166,7 +167,7 @@ type EVM struct {
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
-func NewEVM(blockCtx BlockContext, txCtx TxContext, state IntraBlockState, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
+func NewEVM(blockCtx BlockContext, txCtx TxContext, state *state.IntraBlockState, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
 	evm := &EVM{
 		Context:         blockCtx,
 		TxContext:       txCtx,
@@ -187,7 +188,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, state IntraBlockState, chain
 
 // Reset resets the EVM with a new transaction context.Reset
 // This is not threadsafe and should only be done very cautiously.
-func (evm *EVM) Reset(txCtx TxContext, ibs IntraBlockState) {
+func (evm *EVM) Reset(txCtx TxContext, ibs *state.IntraBlockState) {
 	evm.TxContext = txCtx
 	evm.IntraBlockState = ibs
 }

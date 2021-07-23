@@ -92,12 +92,12 @@ func TestEIP2200(t *testing.T) {
 			s := state.New(state.NewPlainStateReader(tx))
 			s.CreateAccount(address, true)
 			s.SetCode(address, hexutil.MustDecode(tt.input))
-			s.SetState(address, &common.Hash{}, *uint256.NewInt(uint64(tt.original)))
+			s.SetState(address, common.Hash{}, *uint256.NewInt(uint64(tt.original)))
 
 			_ = s.CommitBlock(params.AllEthashProtocolChanges.Rules(0), state.NewPlainStateWriter(tx, tx, 0))
 			vmctx := BlockContext{
-				CanTransfer: func(IntraBlockState, common.Address, *uint256.Int) bool { return true },
-				Transfer:    func(IntraBlockState, common.Address, common.Address, *uint256.Int, bool) {},
+				CanTransfer: func(state.IntraBlockState, common.Address, *uint256.Int) bool { return true },
+				Transfer:    func(state.IntraBlockState, common.Address, common.Address, *uint256.Int, bool) {},
 				CheckTEVM:   func(common.Hash) (bool, error) { return false, nil },
 			}
 			vmenv := NewEVM(vmctx, TxContext{}, s, params.AllEthashProtocolChanges, Config{ExtraEips: []int{2200}})

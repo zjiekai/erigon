@@ -290,7 +290,7 @@ func FinalizeBlockExecution(engine consensus.Engine, header *types.Header,
 		acc0.Nonce = 1
 		acc := accounts.NewAccount()
 		acc.Nonce = 0
-		stateWriter.UpdateAccountData(SystemAddress, &acc0, &acc)
+		stateWriter.UpdateAccountData(SystemAddress, acc0, acc)
 	}
 
 	if err := stateWriter.WriteChangeSets(); err != nil {

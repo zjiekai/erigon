@@ -40,7 +40,7 @@ func (dsw *DbStateWriter) ChangeSetWriter() *ChangeSetWriter {
 	return dsw.csw
 }
 
-func originalAccountData(original *accounts.Account, omitHashes bool) []byte {
+func originalAccountData(original accounts.Account, omitHashes bool) []byte {
 	var originalData []byte
 	if !original.Initialised {
 		originalData = []byte{}
@@ -59,7 +59,7 @@ func originalAccountData(original *accounts.Account, omitHashes bool) []byte {
 	return originalData
 }
 
-func (dsw *DbStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (dsw *DbStateWriter) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	if err := dsw.csw.UpdateAccountData(address, original, account); err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (dsw *DbStateWriter) UpdateAccountData(address common.Address, original, ac
 	return nil
 }
 
-func (dsw *DbStateWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (dsw *DbStateWriter) DeleteAccount(address common.Address, original accounts.Account) error {
 	if err := dsw.csw.DeleteAccount(address, original); err != nil {
 		return err
 	}
@@ -115,12 +115,12 @@ func (dsw *DbStateWriter) UpdateAccountCode(address common.Address, incarnation 
 	return nil
 }
 
-func (dsw *DbStateWriter) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (dsw *DbStateWriter) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	// We delegate here first to let the changeSetWrite make its own decision on whether to proceed in case *original == *value
 	if err := dsw.csw.WriteAccountStorage(address, incarnation, key, original, value); err != nil {
 		return err
 	}
-	if *original == *value {
+	if original == value {
 		return nil
 	}
 	seckey, err := common.HashData(key[:])

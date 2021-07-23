@@ -693,7 +693,7 @@ func (sc *StateCache) setWrite(item CacheItem, writeItem CacheWriteItem, delete 
 }
 
 // SetAccountWrite adds given account to the cache, marking it as written (cannot be evicted)
-func (sc *StateCache) SetAccountWrite(address []byte, account *accounts.Account) {
+func (sc *StateCache) SetAccountWrite(address []byte, account accounts.Account) {
 	var ai AccountItem
 	h := common.NewHasher()
 	defer common.ReturnHasherToPool(h)
@@ -702,7 +702,7 @@ func (sc *StateCache) SetAccountWrite(address []byte, account *accounts.Account)
 	h.Sha.Write(address)
 	//nolint:errcheck
 	h.Sha.Read(ai.addrHash[:])
-	ai.account.Copy(account)
+	ai.account.Copy(&account)
 	var awi AccountWriteItem
 	copy(awi.address[:], address)
 	awi.ai = &ai

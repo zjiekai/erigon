@@ -35,7 +35,7 @@ func (r *StateReader) ReadAccountData(address common.Address) (*accounts.Account
 	return &acc, nil
 }
 
-func (r *StateReader) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (r *StateReader) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	compositeKey := dbutils.PlainGenerateCompositeStorageKey(address.Bytes(), incarnation, key.Bytes())
 	return state.GetAsOf(r.tx, true /* storage */, compositeKey, r.blockNr+1)
 }

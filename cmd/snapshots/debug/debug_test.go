@@ -237,7 +237,7 @@ func (d *DebugReaderWriter) ReadAccountData(address common.Address) (*accounts.A
 	return d.r.ReadAccountData(address)
 }
 
-func (d *DebugReaderWriter) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (d *DebugReaderWriter) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	//d.readStorage[string(dbutils.PlainGenerateCompositeStorageKey(address.Bytes(),incarnation, key.Bytes()))] = struct{}{}
 	return d.r.ReadAccountStorage(address, incarnation, key)
 }
@@ -264,7 +264,7 @@ func (d *DebugReaderWriter) WriteHistory() error {
 	return d.w.WriteHistory()
 }
 
-func (d *DebugReaderWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (d *DebugReaderWriter) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	b, err := rlp.EncodeToBytes(account)
 	if err != nil {
 		return err
@@ -278,13 +278,13 @@ func (d *DebugReaderWriter) UpdateAccountCode(address common.Address, incarnatio
 	return d.w.UpdateAccountCode(address, incarnation, codeHash, code)
 }
 
-func (d *DebugReaderWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (d *DebugReaderWriter) DeleteAccount(address common.Address, original accounts.Account) error {
 	d.updatedAcc[address] = nil
 	//d.deletedAcc[address]= struct{}{}
 	return d.w.DeleteAccount(address, original)
 }
 
-func (d *DebugReaderWriter) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (d *DebugReaderWriter) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	d.updatedStorage[string(dbutils.PlainGenerateCompositeStorageKey(address.Bytes(), incarnation, key.Bytes()))] = value.Bytes()
 	return d.w.WriteAccountStorage(address, incarnation, key, original, value)
 }

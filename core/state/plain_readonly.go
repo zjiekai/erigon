@@ -183,7 +183,7 @@ func (dbs *PlainDBState) ReadAccountData(address common.Address) (*accounts.Acco
 	return &a, nil
 }
 
-func (dbs *PlainDBState) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (dbs *PlainDBState) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	var tx ethdb.Tx
 	if hasTx, ok := dbs.db.(ethdb.HasTx); ok {
 		tx = hasTx.Tx()
@@ -262,11 +262,11 @@ func (dbs *PlainDBState) ReadAccountIncarnation(address common.Address) (uint64,
 	return acc.Incarnation - 1, nil
 }
 
-func (dbs *PlainDBState) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (dbs *PlainDBState) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	return nil
 }
 
-func (dbs *PlainDBState) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (dbs *PlainDBState) DeleteAccount(address common.Address, original accounts.Account) error {
 	return nil
 }
 
@@ -274,7 +274,7 @@ func (dbs *PlainDBState) UpdateAccountCode(address common.Address, incarnation u
 	return nil
 }
 
-func (dbs *PlainDBState) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (dbs *PlainDBState) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	t, ok := dbs.storage[address]
 	if !ok {
 		t = llrb.New()
@@ -287,7 +287,7 @@ func (dbs *PlainDBState) WriteAccountStorage(address common.Address, incarnation
 	if err != nil {
 		return err
 	}
-	i := &storageItem{key: *key, value: *value}
+	i := &storageItem{key: key, value: value}
 	_, err = h.Sha.Read(i.seckey[:])
 	if err != nil {
 		return err
@@ -424,7 +424,7 @@ func (s *PlainKVState) ReadAccountData(address common.Address) (*accounts.Accoun
 	return &a, nil
 }
 
-func (s *PlainKVState) ReadAccountStorage(address common.Address, incarnation uint64, key *common.Hash) ([]byte, error) {
+func (s *PlainKVState) ReadAccountStorage(address common.Address, incarnation uint64, key common.Hash) ([]byte, error) {
 	compositeKey := dbutils.PlainGenerateCompositeStorageKey(address.Bytes(), incarnation, key.Bytes())
 	enc, err := GetAsOf(s.tx, true /* storage */, compositeKey, s.blockNr+1)
 	if err != nil {
@@ -470,11 +470,11 @@ func (s *PlainKVState) ReadAccountIncarnation(address common.Address) (uint64, e
 	return acc.Incarnation - 1, nil
 }
 
-func (s *PlainKVState) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (s *PlainKVState) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	return nil
 }
 
-func (s *PlainKVState) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (s *PlainKVState) DeleteAccount(address common.Address, original accounts.Account) error {
 	return nil
 }
 
@@ -482,7 +482,7 @@ func (s *PlainKVState) UpdateAccountCode(address common.Address, incarnation uin
 	return nil
 }
 
-func (s *PlainKVState) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (s *PlainKVState) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	t, ok := s.storage[address]
 	if !ok {
 		t = llrb.New()
@@ -495,7 +495,7 @@ func (s *PlainKVState) WriteAccountStorage(address common.Address, incarnation u
 	if err != nil {
 		return err
 	}
-	i := &storageItem{key: *key, value: *value}
+	i := &storageItem{key: key, value: value}
 	_, err = h.Sha.Read(i.seckey[:])
 	if err != nil {
 		return err

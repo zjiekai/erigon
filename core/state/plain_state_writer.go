@@ -41,7 +41,7 @@ func (w *PlainStateWriter) SetAccumulator(accumulator *shards.Accumulator) *Plai
 	return w
 }
 
-func (w *PlainStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+func (w *PlainStateWriter) UpdateAccountData(address common.Address, original, account accounts.Account) error {
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountData(address, original, account); err != nil {
 			return err
@@ -70,7 +70,7 @@ func (w *PlainStateWriter) UpdateAccountCode(address common.Address, incarnation
 	return w.db.Put(dbutils.PlainContractCodeBucket, dbutils.PlainGenerateStoragePrefix(address[:], incarnation), codeHash[:])
 }
 
-func (w *PlainStateWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+func (w *PlainStateWriter) DeleteAccount(address common.Address, original accounts.Account) error {
 	if w.csw != nil {
 		if err := w.csw.DeleteAccount(address, original); err != nil {
 			return err
@@ -92,20 +92,20 @@ func (w *PlainStateWriter) DeleteAccount(address common.Address, original *accou
 	return nil
 }
 
-func (w *PlainStateWriter) WriteAccountStorage(address common.Address, incarnation uint64, key *common.Hash, original, value *uint256.Int) error {
+func (w *PlainStateWriter) WriteAccountStorage(address common.Address, incarnation uint64, key common.Hash, original, value uint256.Int) error {
 	if w.csw != nil {
 		if err := w.csw.WriteAccountStorage(address, incarnation, key, original, value); err != nil {
 			return err
 		}
 	}
-	if *original == *value {
+	if original == value {
 		return nil
 	}
 	compositeKey := dbutils.PlainGenerateCompositeStorageKey(address.Bytes(), incarnation, key.Bytes())
 
 	v := value.Bytes()
 	if w.accumulator != nil {
-		w.accumulator.ChangeStorage(address, incarnation, *key, v)
+		w.accumulator.ChangeStorage(address, incarnation, key, v)
 	}
 	if len(v) == 0 {
 		return w.db.Delete(dbutils.PlainStateBucket, compositeKey, nil)

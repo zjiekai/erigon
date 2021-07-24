@@ -16,12 +16,13 @@ import (
 )
 
 type mutation struct {
-	puts  map[string]*bytebtree.BTree
-	db    ethdb.Database
-	quit  <-chan struct{}
-	clean func()
-	mu    sync.RWMutex
-	size  int
+	puts       map[string]*bytebtree.BTree
+	db         ethdb.Database
+	quit       <-chan struct{}
+	clean      func()
+	searchItem MutationItem
+	mu         sync.RWMutex
+	size       int
 }
 
 // NewBatch - starts in-mem batch

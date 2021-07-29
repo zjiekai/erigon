@@ -2013,6 +2013,18 @@ func scanReceipts3(chaindata string, block uint64) error {
 		return err
 	}
 	defer tx.Rollback()
+	c, _ := tx.Cursor(kv.AccountsHistory)
+	ethdb.Walk(c, nil, 0, func(k, v []byte) (bool, error) {
+		if len(v) > 1800 {
+			bm := roaring64.New()
+			bm.ReadFrom(bytes.NewReader(v))
+			fmt.Printf("found: %d, %d\n", len(v), bm.GetCardinality())
+			return false, nil
+		}
+		return true, nil
+	})
+	return nil
+
 	var key [8]byte
 	var v []byte
 	binary.BigEndian.PutUint64(key[:], block)

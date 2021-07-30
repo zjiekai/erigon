@@ -166,6 +166,7 @@ func RemoteServices(cfg Flags, logger log.Logger, rootCancel context.CancelFunc)
 	}
 	// Do not change the order of these checks. Chaindata needs to be checked first, because PrivateApiAddr has default value which is not ""
 	// If PrivateApiAddr is checked first, the Chaindata option will never work
+	logger.Warn("db params", "cfg.Chaindata", cfg.Chaindata, "cfg.SingleNodeMode", cfg.SingleNodeMode)
 	if cfg.SingleNodeMode {
 		var rwKv kv.RwDB
 		rwKv, err = kv2.NewMDBX(logger).Path(cfg.Chaindata).Readonly().Open()

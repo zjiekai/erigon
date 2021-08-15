@@ -350,11 +350,11 @@ func incrementIntermediateHashes(logPrefix string, s *StageState, db kv.RwTx, to
 		return trie.EmptyRoot, err
 	}
 
-	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewLatestEntryBuffer(etl.BufferOptimalSize))
 	defer accTrieCollector.Close(logPrefix)
 	accTrieCollectorFunc := accountTrieCollector(accTrieCollector)
 
-	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewLatestEntryBuffer(etl.BufferOptimalSize))
 	defer stTrieCollector.Close(logPrefix)
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 
@@ -435,11 +435,11 @@ func unwindIntermediateHashesStageImpl(logPrefix string, u *UnwindState, s *Stag
 		return err
 	}
 
-	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	accTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewLatestEntryBuffer(etl.BufferOptimalSize))
 	defer accTrieCollector.Close(logPrefix)
 	accTrieCollectorFunc := accountTrieCollector(accTrieCollector)
 
-	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewSortableBuffer(etl.BufferOptimalSize))
+	stTrieCollector := etl.NewCollector(cfg.tmpDir, etl.NewLatestEntryBuffer(etl.BufferOptimalSize))
 	defer stTrieCollector.Close(logPrefix)
 	stTrieCollectorFunc := storageTrieCollector(stTrieCollector)
 
@@ -513,6 +513,7 @@ func accountTrieCollector(collector *etl.Collector) trie.HashCollector2 {
 			return nil
 		}
 		if hasState == 0 {
+			//fmt.Printf("del:%x\n", keyHex)
 			return collector.Collect(keyHex, nil)
 		}
 		if bits.OnesCount16(hasHash) != len(hashes)/common.HashLength {
@@ -521,6 +522,7 @@ func accountTrieCollector(collector *etl.Collector) trie.HashCollector2 {
 		assertSubset(hasTree, hasState)
 		assertSubset(hasHash, hasState)
 		newV = trie.MarshalTrieNode(hasState, hasTree, hasHash, hashes, nil, newV)
+		//fmt.Printf("put:%x\n", keyHex)
 		return collector.Collect(keyHex, newV)
 	}
 }

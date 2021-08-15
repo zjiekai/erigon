@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"unsafe"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -280,14 +281,14 @@ func (b *latestEntrySortableBuffer) SetComparator(cmp kv.CmpFunc) {
 }
 
 func (b *latestEntrySortableBuffer) Put(k, v []byte) {
-	_, ok := b.entries[string(k)]
+	_, ok := b.entries[*(*string)(unsafe.Pointer(&k))]
 	if !ok {
 		// if we already had this entry, we are going to keep it and ignore new value
 		return
 	}
 
 	b.size += len(k) + len(v)
-	b.entries[string(k)] = v
+	b.entries[*(*string)(unsafe.Pointer(&k))] = v
 }
 
 func (b *latestEntrySortableBuffer) Size() int {

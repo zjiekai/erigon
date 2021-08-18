@@ -175,7 +175,7 @@ func MockWithEverything(t *testing.T, gspec *core.Genesis, key *ecdsa.PrivateKey
 		logger := log.New() //TODO: move higher
 
 		mock.DB = mdbx.NewMDBX(logger).InMem().Flags(func(u uint) uint {
-			return (u ^ mdbx2.Durable) | mdbx2.NoMetaSync | mdbx2.UtterlyNoSync
+			return (u ^ mdbx2.Durable) | mdbx2.NoMetaSync | mdbx2.SafeNoSync
 		}).MustOpen()
 	} else {
 		mock.DB = memdb.New()

@@ -54,6 +54,7 @@ require (
 	github.com/ugorji/go/codec/codecgen v1.1.13
 	github.com/urfave/cli v1.22.5
 	github.com/valyala/fastjson v1.6.3
+	github.com/valyala/gozstd v1.11.0 // indirect
 	github.com/wcharczuk/go-chart/v2 v2.1.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e

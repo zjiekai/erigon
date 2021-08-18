@@ -16,6 +16,7 @@ import (
 	proto_sentry "github.com/ledgerwatch/erigon-lib/gointerfaces/sentry"
 	ptypes "github.com/ledgerwatch/erigon-lib/gointerfaces/types"
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon-lib/kv/memdb"
 	"github.com/ledgerwatch/erigon/cmd/sentry/download"
 	"github.com/ledgerwatch/erigon/common"
@@ -41,6 +42,7 @@ import (
 	"github.com/ledgerwatch/erigon/turbo/stages/txpropagate"
 	"github.com/ledgerwatch/erigon/turbo/txpool"
 	"github.com/ledgerwatch/log/v3"
+	mdbx2 "github.com/torquem-ch/mdbx-go/mdbx"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -170,7 +172,11 @@ func MockWithEverything(t *testing.T, gspec *core.Genesis, key *ecdsa.PrivateKey
 		PeerId: gointerfaces.ConvertBytesToH512([]byte("12345")),
 	}
 	if t != nil {
-		mock.DB = memdb.NewTestDB(t)
+		logger := log.New() //TODO: move higher
+
+		mock.DB = mdbx.NewMDBX(logger).InMem().Flags(func(u uint) uint {
+			return (u ^ mdbx2.Durable) | mdbx2.NoMetaSync | mdbx2.UtterlyNoSync
+		}).MustOpen()
 	} else {
 		mock.DB = memdb.New()
 	}

@@ -191,6 +191,7 @@ func (s *Sync) StageState(stage stages.SyncStage, tx kv.Tx, db kv.RoDB) (*StageS
 func (s *Sync) Run(db kv.RwDB, tx kv.RwTx, firstCycle bool) error {
 	s.prevUnwindPoint = nil
 	s.timings = s.timings[:0]
+	prevDirty := uint64(0)
 	for !s.IsDone() {
 		if s.unwindPoint != nil {
 			for j := 0; j < len(s.unwindOrder); j++ {
@@ -230,11 +231,14 @@ func (s *Sync) Run(db kv.RwDB, tx kv.RwTx, firstCycle bool) error {
 			return err
 		}
 
-		type sd interface {
-			SpaceDirty() (uint64, uint64, error)
+		if tx != nil {
+			type sd interface {
+				SpaceDirty() (uint64, uint64, error)
+			}
+			dirty, _, _ := tx.(sd).SpaceDirty()
+			fmt.Printf("tx: %s: %dKb\n", s.LogPrefix(), (dirty-prevDirty)/1024)
+			prevDirty = dirty
 		}
-		dirty, _, _ := tx.(sd).SpaceDirty()
-		fmt.Printf("tx: %s: %d\n", s.LogPrefix(), dirty/1024)
 		s.NextStage()
 	}
 

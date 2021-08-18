@@ -35,6 +35,7 @@ import (
 	"github.com/ledgerwatch/erigon/p2p"
 	"github.com/ledgerwatch/erigon/rpc"
 	"github.com/ledgerwatch/log/v3"
+	mdbx2 "github.com/torquem-ch/mdbx-go/mdbx"
 )
 
 // Node is a container on which services can be registered.
@@ -512,7 +513,9 @@ func OpenDatabase(config *Config, logger log.Logger, label kv.Label) (kv.RwDB, e
 	var openFunc func(exclusive bool) (kv.RwDB, error)
 	log.Info("Opening Database", "label", name, "path", dbPath)
 	openFunc = func(exclusive bool) (kv.RwDB, error) {
-		opts := mdbx.NewMDBX(logger).Path(dbPath).Label(label).DBVerbosity(config.DatabaseVerbosity)
+		opts := mdbx.NewMDBX(logger).Path(dbPath).Label(label).Flags(func(flags uint) uint {
+			return (flags ^ mdbx2.Durable) | mdbx2.UtterlyNoSync
+		}).DBVerbosity(config.DatabaseVerbosity)
 		if exclusive {
 			opts = opts.Exclusive()
 		}

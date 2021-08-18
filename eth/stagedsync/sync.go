@@ -230,6 +230,11 @@ func (s *Sync) Run(db kv.RwDB, tx kv.RwTx, firstCycle bool) error {
 			return err
 		}
 
+		type sd interface {
+			SpaceDirty() (uint64, uint64, error)
+		}
+		dirty, _, _ := tx.(sd).SpaceDirty()
+		fmt.Printf("tx: %s: %d\n", s.LogPrefix(), dirty/1024)
 		s.NextStage()
 	}
 

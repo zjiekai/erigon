@@ -514,7 +514,7 @@ func OpenDatabase(config *Config, logger log.Logger, label kv.Label) (kv.RwDB, e
 	log.Info("Opening Database", "label", name, "path", dbPath)
 	openFunc = func(exclusive bool) (kv.RwDB, error) {
 		opts := mdbx.NewMDBX(logger).Path(dbPath).Label(label).Flags(func(flags uint) uint {
-			return (flags ^ mdbx2.Durable) | mdbx2.SafeNoSync | mdbx2.NoMetaSync
+			return (flags ^ mdbx2.Durable) | mdbx2.UtterlyNoSync | mdbx2.NoMetaSync
 		}).DBVerbosity(config.DatabaseVerbosity)
 		if exclusive {
 			opts = opts.Exclusive()

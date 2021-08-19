@@ -712,6 +712,7 @@ func (ss *SentryServerImpl) SendMessageByMinBlock(_ context.Context, inreq *prot
 }
 
 func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sentry.SendMessageByIdRequest) (*proto_sentry.SentPeers, error) {
+	defer func(t time.Time) { fmt.Printf("sentry.go:715: %s\n", time.Since(t)) }(time.Now())
 	peerID := string(gointerfaces.ConvertH512ToBytes(inreq.PeerId))
 	x, ok := ss.GoodPeers.Load(peerID)
 	if !ok {

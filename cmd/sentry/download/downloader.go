@@ -854,6 +854,8 @@ func (cs *ControlServerImpl) getReceipts65(ctx context.Context, inreq *proto_sen
 }
 
 func (cs *ControlServerImpl) HandleInboundMessage(ctx context.Context, inreq *proto_sentry.InboundMessage, sentry direct.SentryClient) error {
+	log.Info("recv message", "num", inreq.Id.String())
+
 	switch inreq.Id {
 	// ========= eth 65 ==========
 	case proto_sentry.MessageId_GET_BLOCK_HEADERS_65:

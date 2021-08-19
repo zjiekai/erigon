@@ -60,17 +60,20 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("could not connect to remoteKv: %w", err)
 		}
+		defer coreConn.Close()
 
 		kvClient := remote.NewKVClient(coreConn)
 		coreDB, err := remotedb.NewRemote(gointerfaces.VersionFromProto(remotedbserver.KvServiceAPIVersion), log.New(), kvClient).Open()
 		if err != nil {
 			return fmt.Errorf("could not connect to remoteKv: %w", err)
 		}
+		defer coreDB.Close()
 
 		txPoolDB, err := mdbx.NewMDBX(log.New()).Path(path.Join(datadir, "txpool")).WithTablessCfg(func(defaultBuckets kv.TableCfg) kv.TableCfg { return kv.TxpoolTablesCfg }).Open()
 		if err != nil {
 			return err
 		}
+		defer txPoolDB.Close()
 
 		sentryClients := make([]txpool.SentryClient, len(sentryAddr))
 		sentryClientsCasted := make([]proto_sentry.SentryClient, len(sentryAddr))
@@ -95,8 +98,9 @@ var rootCmd = &cobra.Command{
 		fetcher.ConnectSentries()
 
 		send := txpool.NewSend(cmd.Context(), sentryClients, txPool)
-
+		log.Info("[txpool] Started")
 		txpool.BroadcastLoop(cmd.Context(), txPool, newTxs, send, txpool.DefaultTimings)
+		defer log.Info("[txpool] Stopped")
 		return nil
 	},
 }

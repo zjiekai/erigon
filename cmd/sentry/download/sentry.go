@@ -904,9 +904,11 @@ func (ss *SentryServerImpl) GetStatus() *proto_sentry.StatusData {
 
 func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b []byte) {
 	ss.messageStreamsLock.RLock()
-	defer ss.messageStreamsLock.RUnlock()
+	streams := ss.messageStreams[msgID]
+	ss.messageStreamsLock.RUnlock()
+
 	log.Info("sentry.send", "id", msgID)
-	errs := ss.messageStreams[msgID].Broadcast(&proto_sentry.InboundMessage{
+	errs := streams.Broadcast(&proto_sentry.InboundMessage{
 		PeerId: gointerfaces.ConvertBytesToH512([]byte(peerID)),
 		Id:     msgID,
 		Data:   b,

@@ -299,7 +299,7 @@ func runPeer(
 			if _, err := io.ReadFull(msg.Payload, b); err != nil {
 				log.Error(fmt.Sprintf("%s: reading msg into bytes: %v", peerID, err))
 			}
-			send(eth.ToProto[protocol][msg.Code], peerID, b)
+			go send(eth.ToProto[protocol][msg.Code], peerID, b)
 		case eth.BlockHeadersMsg:
 			if !hasSubscribers(eth.ToProto[protocol][msg.Code]) {
 				continue
@@ -318,7 +318,7 @@ func runPeer(
 			if _, err := io.ReadFull(msg.Payload, b); err != nil {
 				log.Error(fmt.Sprintf("%s: reading msg into bytes: %v", peerID, err))
 			}
-			send(eth.ToProto[protocol][msg.Code], peerID, b)
+			go send(eth.ToProto[protocol][msg.Code], peerID, b)
 		case eth.BlockBodiesMsg:
 			if !hasSubscribers(eth.ToProto[protocol][msg.Code]) {
 				continue
@@ -372,7 +372,7 @@ func runPeer(
 			if _, err := io.ReadFull(msg.Payload, b); err != nil {
 				log.Error(fmt.Sprintf("%s: reading msg into bytes: %v", peerID, err))
 			}
-			send(eth.ToProto[protocol][msg.Code], peerID, b)
+			go send(eth.ToProto[protocol][msg.Code], peerID, b)
 		case eth.TransactionsMsg:
 			if !hasSubscribers(eth.ToProto[protocol][msg.Code]) {
 				continue

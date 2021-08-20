@@ -3,7 +3,7 @@ version: 2021.08.03
 summary: Implementation of Ethereum on the efficiency frontier, written in Go.
 description: |
   Erigon is an implementation of Ethereum (aka "Ethereum client"), on the efficiency frontier, written in Go.
-confinement: devmode
+confinement: strict
 base: core20
 parts:
   erigon:
@@ -15,3 +15,4 @@ parts:
 apps:
   erigon:
     command: bin/erigon
+    plugs: [network-bind]

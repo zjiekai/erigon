@@ -16,3 +16,6 @@ apps:
   erigon:
     command: bin/erigon
     plugs: [network-bind]
+  rpcdaemon:
+    command: bin/rpcdaemon
+    plugs: [network-bind]

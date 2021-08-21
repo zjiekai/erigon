@@ -45,7 +45,7 @@ func (w *NfPlainStateWriter) SetAccumulator(accumulator *shards.Accumulator) *Nf
 }
 
 func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
-	fmt.Printf("update: %x,%d\n", address, account.Incarnation)
+	fmt.Printf("update: %x,%d,%d\n", address, account.Incarnation, account.Balance.Uint64())
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountData(address, original, account); err != nil {
 			return err

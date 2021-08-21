@@ -45,6 +45,7 @@ func (r *NfPlainStateReader) ReadAccountData(address common.Address) (*accounts.
 	if err = a.DecodeForStorage(enc); err != nil {
 		return nil, err
 	}
+	fmt.Printf("get done: %x,%d\n", address, a.Balance.Uint64())
 	return &a, nil
 }
 

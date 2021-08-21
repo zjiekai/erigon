@@ -1091,13 +1091,16 @@ func TestWrongIncarnation(t *testing.T) {
 
 	var acc accounts.Account
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
-		ok, err := rawdb.ReadAccount(tx, contractAddress, &acc)
+		r := state.NewNfPlainStateReader(tx)
+		acc2, err := r.ReadAccountData(contractAddress)
+		//ok, err := rawdb.ReadAccount(tx, contractAddress, &acc)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !ok {
+		if acc2 == nil {
 			t.Fatal(errors.New("acc not found"))
 		}
+		acc = *acc2
 
 		if acc.Incarnation != state.FirstContractIncarnation {
 			t.Fatal("Incorrect incarnation", acc.Incarnation)

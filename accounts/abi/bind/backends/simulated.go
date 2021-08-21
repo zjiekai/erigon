@@ -76,7 +76,7 @@ type SimulatedBackend struct {
 	pendingHeader   *types.Header
 	gasPool         *core.GasPool
 	pendingBlock    *types.Block // Currently pending block that will be imported on request
-	pendingReader   *state.PlainStateReader
+	pendingReader   state.StateReader
 	pendingState    *state.IntraBlockState // Currently pending state that will be the active on request
 
 	events *filters.EventSystem // Event system for filtering log events live
@@ -167,7 +167,7 @@ func (b *SimulatedBackend) emptyPendingBlock() {
 	b.pendingReceipts = chain.Receipts[0]
 	b.pendingHeader = chain.Headers[0]
 	b.gasPool = new(core.GasPool).AddGas(b.pendingHeader.GasLimit)
-	b.pendingReader = state.NewPlainStateReader(olddb.NewObjectDatabase(b.m.DB))
+	b.pendingReader = state.NewNfPlainStateReader(olddb.NewObjectDatabase(b.m.DB))
 	b.pendingState = state.New(b.pendingReader)
 }
 

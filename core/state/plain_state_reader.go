@@ -20,12 +20,14 @@ type PlainStateReader struct {
 }
 
 func NewPlainStateReader(db kv.Getter) *PlainStateReader {
+	panic(1)
 	return &PlainStateReader{
 		db: db,
 	}
 }
 
 func (r *PlainStateReader) ReadAccountData(address common.Address) (*accounts.Account, error) {
+	panic(1)
 	enc, err := r.db.GetOne(kv.PlainState, address.Bytes())
 	if err != nil {
 		return nil, err

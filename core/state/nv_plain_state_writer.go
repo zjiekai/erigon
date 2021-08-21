@@ -45,6 +45,7 @@ func (w *NfPlainStateWriter) SetAccumulator(accumulator *shards.Accumulator) *Nf
 }
 
 func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+	fmt.Printf("update: %x,%d\n", address, account.Incarnation)
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountData(address, original, account); err != nil {
 			return err
@@ -77,7 +78,6 @@ func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original,
 }
 
 func (w *NfPlainStateWriter) UpdateAccountCode(address common.Address, incarnation uint64, codeHash common.Hash, code []byte) error {
-	fmt.Printf("update: %x\n", address)
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountCode(address, incarnation, codeHash, code); err != nil {
 			return err
@@ -118,12 +118,12 @@ func (w *NfPlainStateWriter) DeleteAccount(address common.Address, original *acc
 			return err
 		}
 	}
-	//if err := w.db.Delete(kv.PlainState, encID, nil); err != nil {
-	//	return err
-	//}
-	if err := w.db.Delete(kv.AccountID, address[:], nil); err != nil {
+	if err := w.db.Delete(kv.PlainState, encID, nil); err != nil {
 		return err
 	}
+	//if err := w.db.Delete(kv.AccountID, address[:], nil); err != nil {
+	//	return err
+	//}
 	if original.Incarnation > 0 {
 		var b [8]byte
 		binary.BigEndian.PutUint64(b[:], original.Incarnation)

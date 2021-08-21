@@ -125,7 +125,7 @@ func PromoteHashedStateCleanly(logPrefix string, db kv.RwTx, cfg HashStateCfg, q
 	err := etl.Transform(
 		logPrefix,
 		db,
-		kv.PlainState,
+		kv.AccountID,
 		kv.HashedAccounts,
 		cfg.tmpDir,
 		keyTransformExtractAcc(transformPlainStateKey),
@@ -141,7 +141,7 @@ func PromoteHashedStateCleanly(logPrefix string, db kv.RwTx, cfg HashStateCfg, q
 	err = etl.Transform(
 		logPrefix,
 		db,
-		kv.PlainState,
+		kv.AccountID,
 		kv.HashedStorage,
 		cfg.tmpDir,
 		keyTransformExtractStorage(transformPlainStateKey),

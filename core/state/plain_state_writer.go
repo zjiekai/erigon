@@ -24,6 +24,7 @@ type PlainStateWriter struct {
 }
 
 func NewPlainStateWriter(db putDel, changeSetsDB kv.RwTx, blockNumber uint64) *PlainStateWriter {
+	panic(1)
 	return &PlainStateWriter{
 		db:  db,
 		csw: NewChangeSetWriterPlain(changeSetsDB, blockNumber),
@@ -42,6 +43,7 @@ func (w *PlainStateWriter) SetAccumulator(accumulator *shards.Accumulator) *Plai
 }
 
 func (w *PlainStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
+	panic(1)
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountData(address, original, account); err != nil {
 			return err

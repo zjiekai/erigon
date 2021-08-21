@@ -30,7 +30,7 @@ func (r *NfPlainStateReader) ReadAccountData(address common.Address) (*accounts.
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("get: %x,%t\n", address, encID != nil)
+	//fmt.Printf("get: %x,%t\n", address, encID != nil)
 	if len(encID) == 0 {
 		return nil, nil
 	}
@@ -45,7 +45,7 @@ func (r *NfPlainStateReader) ReadAccountData(address common.Address) (*accounts.
 	if err = a.DecodeForStorage(enc); err != nil {
 		return nil, err
 	}
-	fmt.Printf("get done: %x,%d\n", address, a.Balance.Uint64())
+	//fmt.Printf("get done: %x,%d\n", address, a.Balance.Uint64())
 	return &a, nil
 }
 

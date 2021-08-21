@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -45,7 +44,7 @@ func (w *NfPlainStateWriter) SetAccumulator(accumulator *shards.Accumulator) *Nf
 }
 
 func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original, account *accounts.Account) error {
-	fmt.Printf("update: %x,%d,%d\n", address, account.Incarnation, account.Balance.Uint64())
+	//fmt.Printf("update: %x,%d,%d\n", address, account.Incarnation, account.Balance.Uint64())
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountData(address, original, account); err != nil {
 			return err
@@ -73,7 +72,7 @@ func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original,
 			return err
 		}
 	}
-	fmt.Printf("update2: %x\n", encID)
+	//fmt.Printf("update2: %x\n", encID)
 
 	return w.db.Put(kv.PlainState, encID, value)
 }
@@ -94,7 +93,7 @@ func (w *NfPlainStateWriter) UpdateAccountCode(address common.Address, incarnati
 }
 
 func (w *NfPlainStateWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
-	fmt.Printf("del: %x\n", address)
+	//fmt.Printf("del: %x\n", address)
 	if w.csw != nil {
 		if err := w.csw.DeleteAccount(address, original); err != nil {
 			return err

@@ -483,7 +483,7 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, quit <-chan
 				copy(address[:], k)
 
 				// cleanup contract code bucket
-				original, err := state.NewPlainStateReader(tx).ReadAccountData(address)
+				original, err := state.NewNfPlainStateReader(tx).ReadAccountData(address)
 				if err != nil {
 					return fmt.Errorf("read account for %x: %w", address, err)
 				}
@@ -502,7 +502,25 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, quit <-chan
 				if accumulator != nil {
 					accumulator.ChangeAccount(address, acc.Incarnation, newV)
 				}
-				if err := next(k, k, newV); err != nil {
+
+				encID, err := tx.GetOne(kv.AccountID, address[:])
+				if err != nil {
+					return err
+				}
+				if encID == nil {
+					id, err := tx.ReadSequence(kv.AccountID)
+					if err != nil {
+						return err
+					}
+					encID = make([]byte, 8)
+					binary.BigEndian.PutUint64(encID, id)
+					err = tx.Put(kv.AccountID, address[:], encID)
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := next(k, encID, newV); err != nil {
 					return err
 				}
 			} else {
@@ -511,8 +529,14 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, quit <-chan
 					copy(address[:], k)
 					accumulator.DeleteAccount(address)
 				}
-				if err := next(k, k, nil); err != nil {
+				encID, err := tx.GetOne(kv.AccountID, k)
+				if err != nil {
 					return err
+				}
+				if encID != nil {
+					if err := next(k, encID, nil); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -526,6 +550,7 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, quit <-chan
 			copy(location[:], k[common.AddressLength+common.IncarnationLength:])
 			accumulator.ChangeStorage(address, incarnation, location, common.CopyBytes(v))
 		}
+		panic(1)
 		if len(v) > 0 {
 			if err := next(k, k[:storageKeyLength], v); err != nil {
 				return err

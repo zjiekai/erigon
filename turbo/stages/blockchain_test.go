@@ -988,7 +988,7 @@ func TestDoubleAccountRemoval(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = m.DB.View(m.Ctx, func(tx kv.Tx) error {
-		st := state.New(state.NewDbStateReader(tx))
+		st := state.New(state.NewNfPlainStateReader(tx))
 		assert.NoError(t, err)
 		assert.False(t, st.Exist(theAddr), "Contract should've been removed")
 		return nil

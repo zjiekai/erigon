@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/common"
@@ -29,6 +30,10 @@ func (r *NfPlainStateReader) ReadAccountData(address common.Address) (*accounts.
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("get: %x,%t\n", address, encID != nil)
+	if len(encID) == 0 {
+		return nil, nil
+	}
 	enc, err := r.db.GetOne(kv.PlainState, encID)
 	if err != nil {
 		return nil, err
@@ -48,10 +53,13 @@ func (r *NfPlainStateReader) ReadAccountStorage(address common.Address, incarnat
 	if err != nil {
 		return nil, err
 	}
+	if len(encID) == 0 {
+		return nil, nil
+	}
 	compositeKey := make([]byte, 8+common.IncarnationLength+common.HashLength)
 	copy(compositeKey, encID)
-	binary.BigEndian.PutUint64(compositeKey[common.AddressLength:], incarnation)
-	copy(compositeKey[common.AddressLength+common.IncarnationLength:], key[:])
+	binary.BigEndian.PutUint64(compositeKey[8:], incarnation)
+	copy(compositeKey[8+common.IncarnationLength:], key[:])
 	enc, err := r.db.GetOne(kv.PlainState, compositeKey)
 	if err != nil {
 		return nil, err

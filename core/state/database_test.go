@@ -1073,7 +1073,7 @@ func TestWrongIncarnation(t *testing.T) {
 	}
 
 	err = m.DB.View(context.Background(), func(tx kv.Tx) error {
-		st := state.New(state.NewPlainStateReader(tx))
+		st := state.New(state.NewNfPlainStateReader(tx))
 		if !st.Exist(address) {
 			t.Error("expected account to exist")
 		}
@@ -1103,7 +1103,7 @@ func TestWrongIncarnation(t *testing.T) {
 			t.Fatal("Incorrect incarnation", acc.Incarnation)
 		}
 
-		st := state.New(state.NewPlainStateReader(tx))
+		st := state.New(state.NewNfPlainStateReader(tx))
 		if !st.Exist(contractAddress) {
 			t.Error("expected contractAddress to exist at the block 1", contractAddress.String())
 		}

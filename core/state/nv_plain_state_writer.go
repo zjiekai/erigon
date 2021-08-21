@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -76,6 +77,7 @@ func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original,
 }
 
 func (w *NfPlainStateWriter) UpdateAccountCode(address common.Address, incarnation uint64, codeHash common.Hash, code []byte) error {
+	fmt.Printf("update: %x\n", address)
 	if w.csw != nil {
 		if err := w.csw.UpdateAccountCode(address, incarnation, codeHash, code); err != nil {
 			return err
@@ -91,6 +93,7 @@ func (w *NfPlainStateWriter) UpdateAccountCode(address common.Address, incarnati
 }
 
 func (w *NfPlainStateWriter) DeleteAccount(address common.Address, original *accounts.Account) error {
+	fmt.Printf("del: %x\n", address)
 	if w.csw != nil {
 		if err := w.csw.DeleteAccount(address, original); err != nil {
 			return err
@@ -115,9 +118,9 @@ func (w *NfPlainStateWriter) DeleteAccount(address common.Address, original *acc
 			return err
 		}
 	}
-	if err := w.db.Delete(kv.PlainState, encID, nil); err != nil {
-		return err
-	}
+	//if err := w.db.Delete(kv.PlainState, encID, nil); err != nil {
+	//	return err
+	//}
 	if err := w.db.Delete(kv.AccountID, address[:], nil); err != nil {
 		return err
 	}
@@ -159,8 +162,8 @@ func (w *NfPlainStateWriter) WriteAccountStorage(address common.Address, incarna
 
 	compositeKey := make([]byte, 8+common.IncarnationLength+common.HashLength)
 	copy(compositeKey, encID)
-	binary.BigEndian.PutUint64(compositeKey[common.AddressLength:], incarnation)
-	copy(compositeKey[common.AddressLength+common.IncarnationLength:], key[:])
+	binary.BigEndian.PutUint64(compositeKey[8:], incarnation)
+	copy(compositeKey[8+common.IncarnationLength:], key[:])
 
 	v := value.Bytes()
 	if w.accumulator != nil {

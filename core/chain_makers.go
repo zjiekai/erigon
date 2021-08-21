@@ -254,7 +254,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 	defer tx.Rollback()
 
 	genblock := func(i int, parent *types.Block, ibs *state.IntraBlockState, stateReader state.StateReader,
-		plainStateWriter *state.PlainStateWriter) (*types.Block, types.Receipts, error) {
+		plainStateWriter state.StateWriter) (*types.Block, types.Receipts, error) {
 		b := &BlockGen{i: i, chain: blocks, parent: parent, ibs: ibs, stateReader: stateReader, config: config, engine: engine, txs: make([]types.Transaction, 0, 1), receipts: make([]*types.Receipt, 0, 1), uncles: make([]*types.Header, 0, 1)}
 		b.header = makeHeader(chainreader, parent, ibs, b.engine)
 		// Mutate the state and block according to any hard-fork specs
@@ -295,16 +295,21 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 			if err := tx.ClearBucket(kv.TrieOfStorage); err != nil {
 				return nil, nil, fmt.Errorf("clear TrieOfStorage bucket: %w", err)
 			}
-			c, err := tx.Cursor(kv.PlainState)
+			c, err := tx.Cursor(kv.AccountID)
 			if err != nil {
 				return nil, nil, err
 			}
 			h := common.NewHasher()
 			defer common.ReturnHasherToPool(h)
-			for k, v, err := c.First(); k != nil; k, v, err = c.Next() {
+			for k, encId, err := c.First(); k != nil; k, encId, err = c.Next() {
 				if err != nil {
 					return nil, nil, fmt.Errorf("interate over plain state: %w", err)
 				}
+				v, err := tx.GetOne(kv.PlainState, encId)
+				if err != nil {
+					return nil, nil, fmt.Errorf("interate over plain state: %w", err)
+				}
+
 				var newK []byte
 				if len(k) == common.AddressLength {
 					newK = make([]byte, common.HashLength)
@@ -365,8 +370,8 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 	}
 
 	for i := 0; i < n; i++ {
-		stateReader := state.NewPlainStateReader(tx)
-		plainStateWriter := state.NewPlainStateWriter(tx, nil, parent.Number().Uint64()+uint64(i)+1)
+		stateReader := state.NewNfPlainStateReader(tx)
+		plainStateWriter := state.NewNfPlainStateWriter(tx, nil, parent.Number().Uint64()+uint64(i)+1)
 		ibs := state.New(stateReader)
 		block, receipt, err := genblock(i, parent, ibs, stateReader, plainStateWriter)
 		if err != nil {

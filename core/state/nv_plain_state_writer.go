@@ -73,6 +73,7 @@ func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original,
 			return err
 		}
 	}
+	fmt.Printf("update2: %x\n", encID)
 
 	return w.db.Put(kv.PlainState, encID, value)
 }

@@ -98,7 +98,7 @@ func TestGenerateChain(t *testing.T) {
 		return
 	}
 
-	st := state.New(state.NewDbStateReader(db))
+	st := state.New(state.NewNfPlainStateReader(db))
 	if big.NewInt(5).Cmp(current(m.DB).Number()) != 0 {
 		t.Errorf("wrong block number: %d", current(m.DB).Number())
 	}

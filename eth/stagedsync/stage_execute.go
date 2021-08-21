@@ -550,7 +550,19 @@ func unwindExecutionStage(u *UnwindState, s *StageState, tx kv.RwTx, quit <-chan
 			copy(location[:], k[common.AddressLength+common.IncarnationLength:])
 			accumulator.ChangeStorage(address, incarnation, location, common.CopyBytes(v))
 		}
-		panic(1)
+		encID, err := tx.GetOne(kv.AccountID, k)
+		if err != nil {
+			return err
+		}
+		if encID == nil {
+			return nil
+		}
+
+		compositeKey := make([]byte, 8+common.IncarnationLength+common.HashLength)
+		copy(compositeKey, encID)
+		copy(compositeKey[8:], k[8:16])
+		copy(compositeKey[8+common.IncarnationLength:], k[16:])
+
 		if len(v) > 0 {
 			if err := next(k, k[:storageKeyLength], v); err != nil {
 				return err

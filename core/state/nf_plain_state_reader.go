@@ -3,7 +3,6 @@ package state
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
 	"github.com/ledgerwatch/erigon/common"

@@ -23,7 +23,7 @@ type NfPlainStateWriter struct {
 type putDelSeq interface {
 	putDel
 	kv.Getter
-	ReadSequence(bucket string) (uint64, error)
+	IncrementSequence(bucket string, amount uint64) (uint64, error)
 }
 
 func NewNfPlainStateWriter(db putDelSeq, changeSetsDB kv.RwTx, blockNumber uint64) *NfPlainStateWriter {
@@ -62,7 +62,7 @@ func (w *NfPlainStateWriter) UpdateAccountData(address common.Address, original,
 		return err
 	}
 	if encID == nil {
-		id, err := w.db.ReadSequence(kv.AccountID)
+		id, err := w.db.IncrementSequence(kv.AccountID, 1)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (w *NfPlainStateWriter) DeleteAccount(address common.Address, original *acc
 		return err
 	}
 	if encID == nil {
-		id, err := w.db.ReadSequence(kv.AccountID)
+		id, err := w.db.IncrementSequence(kv.AccountID, 1)
 		if err != nil {
 			return err
 		}
@@ -148,7 +148,7 @@ func (w *NfPlainStateWriter) WriteAccountStorage(address common.Address, incarna
 		return err
 	}
 	if encID == nil {
-		id, err := w.db.ReadSequence(kv.AccountID)
+		id, err := w.db.IncrementSequence(kv.AccountID, 1)
 		if err != nil {
 			return err
 		}

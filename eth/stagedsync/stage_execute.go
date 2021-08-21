@@ -197,7 +197,7 @@ func newStateReaderWriter(
 	var stateReader state.StateReader
 	var stateWriter state.WriterWithChangeSets
 
-	stateReader = state.NewPlainStateReader(batch)
+	stateReader = state.NewNfPlainStateReader(batch)
 
 	if !initialCycle && stateStream {
 		txs, err := rawdb.RawTransactionsRange(tx, block.NumberU64(), block.NumberU64())
@@ -213,9 +213,9 @@ func newStateReaderWriter(
 		accumulator = nil
 	}
 	if writeChangesets {
-		stateWriter = state.NewPlainStateWriter(batch, tx, block.NumberU64()).SetAccumulator(accumulator)
+		stateWriter = state.NewNfPlainStateWriter(batch, tx, block.NumberU64()).SetAccumulator(accumulator)
 	} else {
-		stateWriter = state.NewPlainStateWriterNoHistory(batch).SetAccumulator(accumulator)
+		stateWriter = state.NewNfPlainStateWriterNoHistory(batch).SetAccumulator(accumulator)
 	}
 
 	return stateReader, stateWriter, nil

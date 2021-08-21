@@ -244,6 +244,7 @@ func WriteGenesisBlock(db kv.RwTx, genesis *Genesis) (*params.ChainConfig, *type
 		}
 		hash := block.Hash()
 		if hash != stored {
+			panic((&GenesisMismatchError{stored, hash}))
 			return genesis.Config, block, &GenesisMismatchError{stored, hash}
 		}
 	}

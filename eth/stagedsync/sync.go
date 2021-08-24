@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ledgerwatch/erigon-lib/kv"
+	"github.com/ledgerwatch/erigon-lib/kv/mdbx"
 	"github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/common/debug"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
@@ -229,7 +230,10 @@ func (s *Sync) Run(db kv.RwDB, tx kv.RwTx, firstCycle bool) error {
 		if err := s.runStage(stage, db, tx, firstCycle); err != nil {
 			return err
 		}
-
+		if tx != nil {
+			sd, _, _ := tx.(*mdbx.MdbxTx).SpaceDirty()
+			fmt.Printf("tx: [%s]: %dKb\n", s.LogPrefix(), sd/1024)
+		}
 		s.NextStage()
 	}
 

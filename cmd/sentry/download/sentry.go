@@ -919,6 +919,7 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 	maxLen := 0
 	for i := range ss.messageStreams[msgID] {
 		ch := ss.messageStreams[msgID][i]
+		log.Warn("[sentry] channel sz", "msgID", msgID.String())
 		if msgID == proto_sentry.MessageId_GET_BLOCK_HEADERS_65 {
 			sentryHeadersChannel.Set(uint64(len(ch)))
 		}
@@ -927,7 +928,7 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 		}
 		ch <- req
 		if len(ch) > MessagesQueueSize/2 {
-			log.Debug("[sentry] consuming is slow", "msgID", msgID.String())
+			log.Warn("[sentry] consuming is slow", "msgID", msgID.String())
 			// evict old messages from channel
 			for j := 0; j < MessagesQueueSize/4; j++ {
 				select {

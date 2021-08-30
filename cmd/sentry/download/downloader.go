@@ -734,6 +734,7 @@ func (cs *ControlServerImpl) getBlockHeaders66(ctx context.Context, inreq *proto
 }
 
 func (cs *ControlServerImpl) getBlockHeaders65(ctx context.Context, inreq *proto_sentry.InboundMessage, sentry direct.SentryClient) error {
+	defer func(t time.Time) { log.Warn("h 65","in", time.Since(t)) }(time.Now())
 	var query eth.GetBlockHeadersPacket
 	if err := rlp.DecodeBytes(inreq.Data, &query); err != nil {
 		return fmt.Errorf("decoding getBlockHeaders65: %v, data: %x", err, inreq.Data)
@@ -771,6 +772,7 @@ func (cs *ControlServerImpl) getBlockHeaders65(ctx context.Context, inreq *proto
 }
 
 func (cs *ControlServerImpl) getBlockBodies66(ctx context.Context, inreq *proto_sentry.InboundMessage, sentry direct.SentryClient) error {
+	defer func(t time.Time) { log.Warn("h 66","in", time.Since(t)) }(time.Now())
 	var query eth.GetBlockBodiesPacket66
 	if err := rlp.DecodeBytes(inreq.Data, &query); err != nil {
 		return fmt.Errorf("decoding getBlockBodies66: %v, data: %x", err, inreq.Data)

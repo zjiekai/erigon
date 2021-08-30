@@ -919,8 +919,8 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 	maxLen := 0
 	for i := range ss.messageStreams[msgID] {
 		ch := ss.messageStreams[msgID][i]
-		log.Warn("[sentry] channel sz", "msgID", msgID.String(), "sz", len(ch))
 		if msgID == proto_sentry.MessageId_GET_BLOCK_HEADERS_65 {
+			log.Warn("[sentry] channel sz", "msgID", msgID.String(), "sz", len(ch))
 			sentryHeadersChannel.Set(uint64(len(ch)))
 		}
 		if len(ch) > maxLen {

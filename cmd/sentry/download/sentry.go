@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/VictoriaMetrics/metrics"
 	"github.com/golang/protobuf/ptypes/empty"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -44,6 +45,11 @@ const (
 	// complete before dropping the connection.= as malicious.
 	handshakeTimeout  = 5 * time.Second
 	maxPermitsPerPeer = 4 // How many outstanding requests per peer we may have
+)
+
+var (
+	sentryMaxChannel     = metrics.NewCounter("sentry_max_channel")
+	sentryHeadersChannel = metrics.NewCounter("sentry_headers_channel")
 )
 
 // PeerInfo collects various extra bits of information about the peer,
@@ -909,8 +915,16 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 		Id:     msgID,
 		Data:   b,
 	}
+
+	maxLen := 0
 	for i := range ss.messageStreams[msgID] {
 		ch := ss.messageStreams[msgID][i]
+		if msgID == proto_sentry.MessageId_GET_BLOCK_HEADERS_65 {
+			sentryHeadersChannel.Set(uint64(len(ch)))
+		}
+		if len(ch) > maxLen {
+			maxLen = len(ch)
+		}
 		ch <- req
 		if len(ch) > MessagesQueueSize/2 {
 			log.Debug("[sentry] consuming is slow", "msgID", msgID.String())
@@ -923,6 +937,7 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 			}
 		}
 	}
+	sentryMaxChannel.Set(uint64(maxLen))
 }
 
 func (ss *SentryServerImpl) hasSubscribers(msgID proto_sentry.MessageId) bool {

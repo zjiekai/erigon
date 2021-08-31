@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path"
@@ -784,7 +783,7 @@ running:
 
 		case c := <-srv.checkpointAddPeer:
 			for i := range c.caps {
-				log.Warn("protocol", "found", c.caps[i].Name, "found", c.caps[i].Version,"name",c.name)
+				log.Warn("protocol", "found", c.caps[i].Name, "found", c.caps[i].Version, "name", c.name)
 			}
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.

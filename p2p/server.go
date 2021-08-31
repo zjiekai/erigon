@@ -854,10 +854,10 @@ func (srv *Server) postHandshakeChecks(peers map[enode.ID]*Peer, inboundCount in
 func (srv *Server) addPeerChecks(peers map[enode.ID]*Peer, inboundCount int, c *conn) error {
 	// Drop connections with no matching protocols.
 	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.caps) == 0 {
-			log.Warn("reject protocol",  "name", c.name)
+		//log.Warn("reject protocol", "name", c.name)
 		return DiscUselessPeer
 	}
-	log.Warn("accept protocol",  "name", c.name)
+	log.Warn("accept protocol", "name", c.name)
 
 	// Repeat the post-handshake checks because the
 	// peer set might have changed since those checks were performed.

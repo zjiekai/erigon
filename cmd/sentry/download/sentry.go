@@ -283,6 +283,9 @@ func runPeer(
 		}
 		msg, err := rw.ReadMsg()
 		if err != nil {
+			if strings.Contains(peerInfo.peer.Fullname(), "alex") {
+				log.Warn("errrr", "err", fmt.Errorf("reading message: %v", err))
+			}
 			return fmt.Errorf("reading message: %v", err)
 		}
 		if msg.Size > eth.ProtocolMaxMsgSize {
@@ -746,7 +749,7 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById not implemented for message Id: %s", inreq.Data.Id)
 	}
 	if strings.Contains(peerInfo.peer.Fullname(), "alex") {
-		log.Warn("serve header", "msg",msgcode,"id", peerID, "fullname", peerInfo.peer.Fullname(), "peerID", peerInfo.peer.ID(), "enode", peerInfo.peer.Info().Enode)
+		log.Warn("serve header", "msg", msgcode, "id", peerID, "fullname", peerInfo.peer.Fullname(), "peerID", peerInfo.peer.ID(), "enode", peerInfo.peer.Info().Enode)
 	}
 	if err := peerInfo.rw.WriteMsg(p2p.Msg{Code: msgcode, Size: uint32(len(inreq.Data.Data)), Payload: bytes.NewReader(inreq.Data.Data)}); err != nil {
 		if x, ok := ss.GoodPeers.Load(peerID); ok {
@@ -931,11 +934,6 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 	maxLen := 0
 	for i := range ss.messageStreams[msgID] {
 		ch := ss.messageStreams[msgID][i]
-		if msgID == proto_sentry.MessageId_GET_BLOCK_HEADERS_65 || msgID == proto_sentry.MessageId_GET_BLOCK_HEADERS_66 {
-			log.Warn("[sentry] channel sz", "msgID", msgID.String(), "sz", len(ch))
-			sentryHeadersChannel.Set(uint64(len(ch)))
-			log.Warn("peer: header request", "id", peerID, "msg", msgID)
-		}
 		if len(ch) > maxLen {
 			maxLen = len(ch)
 		}

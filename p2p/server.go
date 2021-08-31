@@ -858,7 +858,7 @@ func (srv *Server) addPeerChecks(peers map[enode.ID]*Peer, inboundCount int, c *
 	// Drop connections with no matching protocols.
 	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.caps) == 0 {
 		for i := range c.caps {
-			log.Warn("reject protocol", "found", c.caps[i].Name, "found", c.caps[i].Version, "name", c.Name)
+			log.Warn("reject protocol", "found", c.caps[i].Name, "found", c.caps[i].Version, "name", c.name)
 		}
 		return DiscUselessPeer
 	}

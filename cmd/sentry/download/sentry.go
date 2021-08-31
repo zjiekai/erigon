@@ -737,8 +737,8 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById not implemented for message Id: %s", inreq.Data.Id)
 	}
 	if msgcode == eth.BlockHeadersMsg {
-		defer func(t time.Time) { fmt.Printf("sentry.go:740: %s\n", time.Since(t)) }(time.Now())
-		fmt.Printf("id: %x,%s,%x,%x\n", peerID, peerInfo.peer.Fullname(), peerInfo.peer.ID(), peerInfo.peer.Info().Enode)
+		defer func(t time.Time) { log.Warn("sentry.go:740","in", time.Since(t)) }(time.Now())
+		log.Warn("serve header","id", peerID, "fullname", peerInfo.peer.Fullname(), "peerID",peerInfo.peer.ID(), "enode", peerInfo.peer.Info().Enode)
 	}
 	if err := peerInfo.rw.WriteMsg(p2p.Msg{Code: msgcode, Size: uint32(len(inreq.Data.Data)), Payload: bytes.NewReader(inreq.Data.Data)}); err != nil {
 		if x, ok := ss.GoodPeers.Load(peerID); ok {
@@ -927,7 +927,7 @@ func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b 
 			log.Warn("[sentry] channel sz", "msgID", msgID.String(), "sz", len(ch))
 			sentryHeadersChannel.Set(uint64(len(ch)))
 			defer func(t time.Time) { log.Warn("sentry.go:929: %s\n", time.Since(t)) }(time.Now())
-			fmt.Printf("id: %s,%s\n", peerID, msgID)
+			log.Warn("peer: header request", "id", peerID, "msg", msgID)
 		}
 		if len(ch) > maxLen {
 			maxLen = len(ch)

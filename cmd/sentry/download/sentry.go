@@ -528,7 +528,7 @@ func NewSentryServer(ctx context.Context, dialCandidates enode.Iterator, readNod
 			}
 			log.Debug(fmt.Sprintf("[%s] Received status message OK", peerID), "name", peer.Name())
 			if strings.Contains(peerInfo.peer.Fullname(), "alex") {
-				log.Warn("handshake succeed", "name", peerInfo.peer.Fullname())
+				log.Warn("handshake succeed", "name", peerInfo.peer.Fullname(), "id", peerID)
 			}
 			if err := runPeer(
 				ctx,

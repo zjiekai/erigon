@@ -839,16 +839,16 @@ running:
 func (srv *Server) postHandshakeChecks(peers map[enode.ID]*Peer, inboundCount int, c *conn) error {
 	switch {
 	case !c.is(trustedConn) && len(peers) >= srv.MaxPeers:
-		log.Warn("disc", "name", c.name)
+		log.Warn("disc1", "name", c.name)
 		return DiscTooManyPeers
 	case !c.is(trustedConn) && c.is(inboundConn) && inboundCount >= srv.maxInboundConns():
-		log.Warn("disc", "name", c.name)
+		log.Warn("disc2", "name", c.name)
 		return DiscTooManyPeers
 	case peers[c.node.ID()] != nil:
-		log.Warn("disc", "name", c.name)
+		log.Warn("disc3", "name", c.name)
 		return DiscAlreadyConnected
 	case c.node.ID() == srv.localnode.ID():
-		log.Warn("disc", "name", c.name)
+		log.Warn("disc4", "name", c.name)
 		return DiscSelf
 	default:
 		return nil

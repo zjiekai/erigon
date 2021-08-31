@@ -229,7 +229,6 @@ func (c *Conn) Write(code uint64, data []byte) (uint32, error) {
 }
 
 func (h *sessionState) writeFrame(conn io.Writer, code uint64, data []byte) error {
-	defer func(t time.Time) { fmt.Printf("rlpx.go:232: %s\n", time.Since(t)) }(time.Now())
 	h.wbuf.reset()
 
 	// Write header.
@@ -257,7 +256,7 @@ func (h *sessionState) writeFrame(conn io.Writer, code uint64, data []byte) erro
 
 	// Write frame MAC.
 	h.wbuf.Write(h.egressMAC.computeFrame(framedata))
-fmt.Printf("sss: %T\n",conn)
+
 	_, err := conn.Write(h.wbuf.data)
 	return err
 }

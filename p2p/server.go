@@ -782,6 +782,9 @@ running:
 			c.cont <- srv.postHandshakeChecks(peers, inboundCount, c)
 
 		case c := <-srv.checkpointAddPeer:
+			for i := range c.caps {
+				log.Warn("protocol", "found", c.caps[i].Name, "found", c.caps[i].Version,"name",c.name)
+			}
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.
 			err := srv.addPeerChecks(peers, inboundCount, c)
@@ -848,9 +851,6 @@ func (srv *Server) postHandshakeChecks(peers map[enode.ID]*Peer, inboundCount in
 }
 
 func (srv *Server) addPeerChecks(peers map[enode.ID]*Peer, inboundCount int, c *conn) error {
-	for i := range c.caps {
-		log.Warn("protocol", "found", c.caps[i].Name, "found", c.caps[i].Version)
-	}
 	// Drop connections with no matching protocols.
 	if len(srv.Protocols) > 0 && countMatchingProtocols(srv.Protocols, c.caps) == 0 {
 		for i := range c.caps {

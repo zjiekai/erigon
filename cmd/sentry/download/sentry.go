@@ -514,11 +514,12 @@ func NewSentryServer(ctx context.Context, dialCandidates enode.Iterator, readNod
 				return ss.startSync(ctx, bestHash, peerID)
 			})
 			if err != nil {
-				log.Warn("handshake","err", fmt.Errorf("handshake to peer %s: %v", peerID, err), "name", peerInfo.peer.Fullname())
+				log.Warn("handshake", "err", fmt.Errorf("handshake to peer %s: %v", peerID, err), "name", peerInfo.peer.Fullname())
 				return fmt.Errorf("handshake to peer %s: %v", peerID, err)
 			}
 			log.Debug(fmt.Sprintf("[%s] Received status message OK", peerID), "name", peer.Name())
 
+			log.Warn("handshake succeed", "name", peerInfo.peer.Fullname())
 			if err := runPeer(
 				ctx,
 				peerID,

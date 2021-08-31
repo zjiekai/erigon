@@ -748,7 +748,7 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 		msgcode != eth.GetPooledTransactionsMsg {
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById not implemented for message Id: %s", inreq.Data.Id)
 	}
-	if strings.Contains(peerInfo.peer.Fullname(), "alex") {
+	if strings.Contains(peerInfo.peer.Fullname(), "alex") && msgcode != eth.BlockHeadersMsg {
 		log.Warn("serve header", "msg", msgcode, "id", peerID, "objID", peerInfo.peer.ID().String(), "fullname", peerInfo.peer.Fullname(), "peerID", peerInfo.peer.ID(), "enode", peerInfo.peer.Info().Enode)
 	}
 	if err := peerInfo.rw.WriteMsg(p2p.Msg{Code: msgcode, Size: uint32(len(inreq.Data.Data)), Payload: bytes.NewReader(inreq.Data.Data)}); err != nil {
@@ -761,6 +761,9 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 		ss.GoodPeers.Delete(peerID)
 		log.Warn("send to peer", "err", fmt.Errorf("sendMessageById to peer %s: %v", peerID, err))
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById to peer %s: %v", peerID, err)
+	}
+	if strings.Contains(peerInfo.peer.Fullname(), "alex") && msgcode != eth.BlockHeadersMsg {
+		log.Warn("serve header succeed", "msg", msgcode, "id", peerID, "objID", peerInfo.peer.ID().String(), "fullname", peerInfo.peer.Fullname(), "peerID", peerInfo.peer.ID(), "enode", peerInfo.peer.Info().Enode)
 	}
 	return &proto_sentry.SentPeers{Peers: []*proto_types.H512{inreq.PeerId}}, nil
 }

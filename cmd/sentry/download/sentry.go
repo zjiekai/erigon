@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -287,6 +288,9 @@ func runPeer(
 		if msg.Size > eth.ProtocolMaxMsgSize {
 			msg.Discard()
 			return fmt.Errorf("message is too large %d, limit %d", msg.Size, eth.ProtocolMaxMsgSize)
+		}
+		if strings.Contains(peerInfo.peer.Fullname(), "alex") {
+			log.Warn("package", "msg", msg.Code)
 		}
 		givePermit := false
 		switch msg.Code {

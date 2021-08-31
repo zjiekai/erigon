@@ -731,6 +731,10 @@ func (srv *Server) run() {
 	defer srv.discmix.Close()
 	defer srv.dialsched.stop()
 
+	for i := range srv.Protocols {
+		log.Warn("my protocol", "found", srv.Protocols[i].Name, "found", srv.Protocols[i].Version, "name", srv.Name)
+	}
+
 	var (
 		peers        = make(map[enode.ID]*Peer)
 		inboundCount = 0

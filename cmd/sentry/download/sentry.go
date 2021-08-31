@@ -288,6 +288,7 @@ func runPeer(
 			msg.Discard()
 			return fmt.Errorf("message is too large %d, limit %d", msg.Size, eth.ProtocolMaxMsgSize)
 		}
+		log.Warn("msg", "msg", msg.Code, "peer", peerInfo.peer.Fullname())
 		givePermit := false
 		switch msg.Code {
 		case eth.StatusMsg:

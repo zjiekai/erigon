@@ -861,7 +861,6 @@ func (srv *Server) addPeerChecks(peers map[enode.ID]*Peer, inboundCount int, c *
 		//log.Warn("reject protocol", "name", c.name)
 		return DiscUselessPeer
 	}
-	log.Warn("accept protocol", "name", c.name)
 
 	// Repeat the post-handshake checks because the
 	// peer set might have changed since those checks were performed.

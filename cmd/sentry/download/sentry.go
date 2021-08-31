@@ -539,7 +539,7 @@ func NewSentryServer(ctx context.Context, dialCandidates enode.Iterator, readNod
 			if !ok {
 				return nil
 			}
-			return p.(*PeerInfo).peer.Info()
+			return p
 		},
 		//Attributes: []enr.Entry{eth.CurrentENREntry(chainConfig, genesisHash, headHeight)},
 	}

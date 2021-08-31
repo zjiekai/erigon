@@ -736,7 +736,10 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 		msgcode != eth.GetPooledTransactionsMsg {
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById not implemented for message Id: %s", inreq.Data.Id)
 	}
-
+	if msgcode == eth.BlockHeadersMsg {
+		defer func(t time.Time) { fmt.Printf("sentry.go:740: %s\n", time.Since(t)) }(time.Now())
+		fmt.Printf("id: %x,%s,%x,%x\n", peerID, peerInfo.peer.Fullname(), peerInfo.peer.ID(), peerInfo.peer.Info().Enode)
+	}
 	if err := peerInfo.rw.WriteMsg(p2p.Msg{Code: msgcode, Size: uint32(len(inreq.Data.Data)), Payload: bytes.NewReader(inreq.Data.Data)}); err != nil {
 		if x, ok := ss.GoodPeers.Load(peerID); ok {
 			peerInfo := x.(*PeerInfo)
@@ -745,6 +748,7 @@ func (ss *SentryServerImpl) SendMessageById(_ context.Context, inreq *proto_sent
 			}
 		}
 		ss.GoodPeers.Delete(peerID)
+		log.Warn("send to peer", "err", fmt.Errorf("sendMessageById to peer %s: %v", peerID, err))
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageById to peer %s: %v", peerID, err)
 	}
 	return &proto_sentry.SentPeers{Peers: []*proto_types.H512{inreq.PeerId}}, nil

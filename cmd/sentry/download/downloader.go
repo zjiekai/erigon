@@ -761,6 +761,7 @@ func (cs *ControlServerImpl) getBlockHeaders65(ctx context.Context, inreq *proto
 			Data: b,
 		},
 	}
+	fmt.Printf("65 answer to:%s\n",inreq.PeerId)
 	_, err = sentry.SendMessageById(ctx, &outreq, &grpc.EmptyCallOption{})
 	if err != nil {
 		if !isPeerNotFoundErr(err) {
@@ -798,6 +799,7 @@ func (cs *ControlServerImpl) getBlockBodies66(ctx context.Context, inreq *proto_
 			Data: b,
 		},
 	}
+	fmt.Printf("66 answer to:%s\n",inreq.PeerId)
 	_, err = sentry.SendMessageById(ctx, &outreq, &grpc.EmptyCallOption{})
 	if err != nil {
 		if isPeerNotFoundErr(err) {

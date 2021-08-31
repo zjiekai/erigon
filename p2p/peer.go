@@ -438,6 +438,7 @@ func (rw *protoRW) WriteMsg(msg Msg) (err error) {
 
 	msg.Code += rw.offset
 
+	log.Warn("send to", "name", 	rw.w.(*conn).name, "id",rw.w.(*conn).node.ID(),"node", rw.w.(*conn).node.String())
 	select {
 	case <-rw.wstart:
 		err = rw.w.WriteMsg(msg)

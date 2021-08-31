@@ -288,7 +288,6 @@ func runPeer(
 			msg.Discard()
 			return fmt.Errorf("message is too large %d, limit %d", msg.Size, eth.ProtocolMaxMsgSize)
 		}
-		log.Warn("msg", "msg", msg.Code, "peer", peerInfo.peer.Fullname())
 		givePermit := false
 		switch msg.Code {
 		case eth.StatusMsg:
@@ -515,6 +514,7 @@ func NewSentryServer(ctx context.Context, dialCandidates enode.Iterator, readNod
 				return ss.startSync(ctx, bestHash, peerID)
 			})
 			if err != nil {
+				log.Warn("handshake","err", fmt.Errorf("handshake to peer %s: %v", peerID, err), "name", peerInfo.peer.Fullname())
 				return fmt.Errorf("handshake to peer %s: %v", peerID, err)
 			}
 			log.Debug(fmt.Sprintf("[%s] Received status message OK", peerID), "name", peer.Name())

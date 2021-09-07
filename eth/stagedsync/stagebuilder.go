@@ -41,7 +41,7 @@ func MiningStages(
 		},
 		{
 			ID:          stages.MiningExecution,
-			Description: "Mining: construct new block from tx pool",
+			Description: "Mining: exec pending txs",
 			Forward: func(firstCycle bool, badBlockUnwind bool, s *StageState, u Unwinder, tx kv.RwTx) error {
 				return SpawnMiningExecStage(s, tx, execCfg, ctx.Done())
 			},

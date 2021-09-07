@@ -271,9 +271,8 @@ Loop:
 		if stoppedErr = common.Stopped(quit); stoppedErr != nil {
 			break
 		}
-		var err error
-		var block *types.Block
-		if block, err = readBlock(blockNum, tx); err != nil {
+		block, err := readBlock(blockNum, tx)
+		if err != nil {
 			return err
 		}
 		if block == nil {

@@ -99,6 +99,7 @@ func SpawnMiningCreateBlockStage(s *StageState, tx kv.RwTx, cfg MiningCreateBloc
 	}
 
 	logPrefix := s.LogPrefix()
+	fmt.Printf("mining: %s\n", logPrefix)
 	executionAt, err := s.ExecutionAt(tx)
 	if err != nil {
 		return fmt.Errorf("getting last executed block: %w", err)

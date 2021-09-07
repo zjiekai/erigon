@@ -543,6 +543,9 @@ func storageTrieCollector(collector *etl.Collector) trie.StorageHashCollector2 {
 		assertSubset(hasTree, hasState)
 		assertSubset(hasHash, hasState)
 		newV = trie.MarshalTrieNode(hasState, hasTree, hasHash, hashes, rootHash, newV)
+		if len(newV) == 1 {
+			panic(1)
+		}
 		return collector.Collect(newK, newV)
 	}
 }

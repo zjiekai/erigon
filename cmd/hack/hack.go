@@ -1140,7 +1140,7 @@ func testGetProof(chaindata string, address common.Address, rewind int, regen bo
 func dumpState(chaindata string) error {
 	db := mdbx.MustOpen(chaindata)
 	defer db.Close()
-	f, err := os.Create("statedump")
+	f, err := os.Create("statedump.hex")
 	if err != nil {
 		return err
 	}
@@ -1149,7 +1149,7 @@ func dumpState(chaindata string) error {
 	defer w.Flush()
 	stAccounts := 0
 	stStorage := 0
-	var varintBuf [10]byte // Buffer for varint number
+	valueSize := 0
 	if err := db.View(context.Background(), func(tx kv.Tx) error {
 		c, err := tx.Cursor(kv.PlainState)
 		if err != nil {
@@ -1157,22 +1157,9 @@ func dumpState(chaindata string) error {
 		}
 		k, v, e := c.First()
 		for ; k != nil && e == nil; k, v, e = c.Next() {
-			keyLen := binary.PutUvarint(varintBuf[:], uint64(len(k)))
-			if _, err = w.Write(varintBuf[:keyLen]); err != nil {
-				return err
-			}
-			if _, err = w.Write([]byte(k)); err != nil {
-				return err
-			}
-			valLen := binary.PutUvarint(varintBuf[:], uint64(len(v)))
-			if _, err = w.Write(varintBuf[:valLen]); err != nil {
-				return err
-			}
-			if len(v) > 0 {
-				if _, err = w.Write(v); err != nil {
-					return err
-				}
-			}
+			fmt.Fprintf(w, "%x\n", k)
+			valueSize++
+			valueSize += len(v)
 			if len(k) > 28 {
 				stStorage++
 			} else {
@@ -1186,7 +1173,7 @@ func dumpState(chaindata string) error {
 	}); err != nil {
 		return err
 	}
-	fmt.Printf("stAccounts = %d, stStorage = %d\n", stAccounts, stStorage)
+	fmt.Printf("stAccounts = %d, stStorage = %d, valueSize = %d\n", stAccounts, stStorage, valueSize)
 	return nil
 }
 

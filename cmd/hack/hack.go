@@ -1162,34 +1162,31 @@ func dumpState(chaindata string) error {
 		if err != nil {
 			return err
 		}
-		var prevKeyInt big.Int
-		var keyInt big.Int
-		var keyDiff big.Int
+		var prevKey []byte
 		k, v, e := c.First()
 		for ; k != nil && e == nil; k, v, e = c.Next() {
 			fmt.Fprintf(w, "%x\n", k)
 			valueSize++
 			valueSize += len(v)
-			keyInt.SetBytes(k)
+			prefixLen := 0
+			for ; prefixLen < len(prevKey) && prefixLen < len(k) && prevKey[prefixLen] == k[prefixLen]; prefixLen++ {
+			}
+
 			if len(k) > 28 {
-				// Long key - shift left by 1 and add 1 (producing an odd number)
-				keyInt.Lsh(&keyInt, 1)
-				keyInt.Add(&keyInt, common.Big1)
 				stStorage++
 			} else {
-				// Short key - shift left by 1 (producing an even number)
-				keyInt.Lsh(&keyInt, 1)
 				stAccounts++
 			}
-			keyDiff.Sub(&keyInt, &prevKeyInt)
-			byteLen := (keyDiff.BitLen() + 7) / 8
-			if err = kw.WriteByte(byte(byteLen)); err != nil {
+			if err = kw.WriteByte(byte(len(k))); err != nil {
 				return err
 			}
-			if _, err = kw.Write(keyDiff.Bytes()); err != nil {
+			if err = kw.WriteByte(byte(prefixLen)); err != nil {
 				return err
 			}
-			prevKeyInt.Set(&keyInt)
+			if _, err = kw.Write(k[prefixLen:]); err != nil {
+				return err
+			}
+			prevKey = common.CopyBytes(k)
 			if (stStorage+stAccounts)%100000 == 0 {
 				fmt.Printf("State records: %d\n", stStorage+stAccounts)
 			}

@@ -1147,6 +1147,13 @@ func dumpState(chaindata string) error {
 	defer f.Close()
 	w := bufio.NewWriter(f)
 	defer w.Flush()
+	kf, err := os.Create("keys.dat")
+	if err != nil {
+		return err
+	}
+	defer kf.Close()
+	kw := bufio.NewWriter(kf)
+	defer kw.Flush()
 	stAccounts := 0
 	stStorage := 0
 	valueSize := 0
@@ -1155,16 +1162,34 @@ func dumpState(chaindata string) error {
 		if err != nil {
 			return err
 		}
+		var prevKeyInt big.Int
+		var keyInt big.Int
+		var keyDiff big.Int
 		k, v, e := c.First()
 		for ; k != nil && e == nil; k, v, e = c.Next() {
 			fmt.Fprintf(w, "%x\n", k)
 			valueSize++
 			valueSize += len(v)
+			keyInt.SetBytes(k)
 			if len(k) > 28 {
+				// Long key - shift left by 1 and add 1 (producing an odd number)
+				keyInt.Lsh(&keyInt, 1)
+				keyInt.Add(&keyInt, common.Big1)
 				stStorage++
 			} else {
+				// Short key - shift left by 1 (producing an even number)
+				keyInt.Lsh(&keyInt, 1)
 				stAccounts++
 			}
+			keyDiff.Sub(&keyInt, &prevKeyInt)
+			byteLen := (keyDiff.BitLen() + 7) / 8
+			if err = kw.WriteByte(byte(byteLen)); err != nil {
+				return err
+			}
+			if _, err = kw.Write(keyDiff.Bytes()); err != nil {
+				return err
+			}
+			prevKeyInt.Set(&keyInt)
 			if (stStorage+stAccounts)%100000 == 0 {
 				fmt.Printf("State records: %d\n", stStorage+stAccounts)
 			}

@@ -638,13 +638,17 @@ func (ss *SentryServerImpl) findPeer(minBlock uint64) (string, *PeerInfo, bool) 
 	now := time.Now()
 	ss.GoodPeers.Range(func(key, value interface{}) bool {
 		peerID := key.(string)
-		x, _ := ss.GoodPeers.Load(peerID)
+		x, ok := ss.GoodPeers.Load(peerID)
+		if !ok {
+			fmt.Printf("fix me plz\n")
+		}
 		peerInfo, _ := x.(*PeerInfo)
 		if peerInfo == nil {
 			return true
 		}
 		if peerInfo.Height() >= minBlock {
 			deadlines := peerInfo.ClearDeadlines(now, false /* givePermit */)
+			fmt.Printf("deadlines: %d,%d\n", deadlines, maxPermitsPerPeer)
 			//fmt.Printf("%d deadlines for peer %s\n", deadlines, peerID)
 			if deadlines < maxPermitsPerPeer {
 				permits := maxPermitsPerPeer - deadlines

@@ -87,8 +87,8 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 	for ; len(blockNums) < BlockBufferSize && bd.requestedLow <= bd.maxProgress; blockNum++ {
 		// Check if we reached highest allowed request block number, and turn back
 		if blockNum >= bd.requestedLow+bd.outstandingLimit || blockNum >= bd.maxProgress {
-			blockNum = 0
 			fmt.Printf("RequestMoreBodies, Avoid tight loop: %d,%d,%d\n", blockNum, bd.requestedLow+bd.outstandingLimit, bd.maxProgress)
+			blockNum = 0
 			break // Avoid tight loop
 		}
 		if bd.delivered.Contains(blockNum) {

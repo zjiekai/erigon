@@ -2,7 +2,9 @@ package download
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
@@ -37,6 +39,7 @@ func (cs *ControlServerImpl) UpdateHead(ctx context.Context, height uint64, hash
 }
 
 func (cs *ControlServerImpl) SendBodyRequest(ctx context.Context, req *bodydownload.BodyRequest) []byte {
+	defer func(t time.Time) { fmt.Printf("SendBodyRequest.go:42: %s, %d\n", time.Since(t),len(req.BlockNums)) }(time.Now())
 	// if sentry not found peers to send such message, try next one. stop if found.
 	for i, ok, next := cs.randSentryIndex(); ok; i, ok = next() {
 		if !cs.sentries[i].Ready() {

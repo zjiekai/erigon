@@ -666,7 +666,7 @@ func (cs *ControlServerImpl) newBlock65(ctx context.Context, inreq *proto_sentry
 }
 
 func (cs *ControlServerImpl) blockBodies66(inreq *proto_sentry.InboundMessage, sentry direct.SentryClient) error {
-	defer func(t time.Time) { fmt.Printf("downloader.go:669: %s\n", time.Since(t)) }(time.Now())
+	defer func(t time.Time) { fmt.Printf("blockBodies66.go:669: %s\n", time.Since(t)) }(time.Now())
 	var request eth.BlockRawBodiesPacket66
 	if err := rlp.DecodeBytes(inreq.Data, &request); err != nil {
 		fmt.Printf("errr: %s\n", fmt.Errorf("decode BlockBodiesPacket66: %v", err))

@@ -83,11 +83,12 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 	var bodyReq *BodyRequest
 	blockNums := make([]uint64, 0, BlockBufferSize)
 	hashes := make([]common.Hash, 0, BlockBufferSize)
-	fmt.Printf("RequestMoreBodies: %d,%d\n",bd.requestedLow, bd.maxProgress)
+	fmt.Printf("RequestMoreBodies: %d,%d\n", bd.requestedLow, bd.maxProgress)
 	for ; len(blockNums) < BlockBufferSize && bd.requestedLow <= bd.maxProgress; blockNum++ {
 		// Check if we reached highest allowed request block number, and turn back
 		if blockNum >= bd.requestedLow+bd.outstandingLimit || blockNum >= bd.maxProgress {
 			blockNum = 0
+			fmt.Printf("RequestMoreBodies, Avoid tight loop: %d,%d,%d\n", blockNum, bd.requestedLow+bd.outstandingLimit, bd.maxProgress)
 			break // Avoid tight loop
 		}
 		if bd.delivered.Contains(blockNum) {

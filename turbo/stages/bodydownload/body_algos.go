@@ -85,8 +85,8 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 	blockNums := make([]uint64, 0, BlockBufferSize)
 	hashes := make([]common.Hash, 0, BlockBufferSize)
 	fmt.Printf("RequestMoreBodies: %d,%d\n", bd.requestedLow, bd.maxProgress)
-	i:=0
-	defer func(t time.Time) { fmt.Printf("body_algos.go:88: %s, %d\n", time.Since(t),i) }(time.Now())
+	i := 0
+	defer func(t time.Time) { fmt.Printf("body_algos.go:88: %s, %d\n", time.Since(t), i) }(time.Now())
 
 	for ; len(blockNums) < BlockBufferSize && bd.requestedLow <= bd.maxProgress; blockNum++ {
 		i++
@@ -173,6 +173,7 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 			bd.delivered.Add(blockNum)
 		}
 	}
+	fmt.Printf("Create requests: %d\n", len(blockNums))
 	if len(blockNums) > 0 {
 		bodyReq = &BodyRequest{BlockNums: blockNums, Hashes: hashes}
 		for _, blockNum := range blockNums {

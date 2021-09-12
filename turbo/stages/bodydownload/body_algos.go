@@ -357,7 +357,7 @@ func (bd *BodyDownload) PrintPeerMap() {
 		fmt.Printf("%s = %d\n", p, n)
 	}
 	fmt.Printf("---------------------------\n")
-	bd.peerMap = make(map[string]int)
+	//bd.peerMap = make(map[string]int)
 }
 
 func (bd *BodyDownload) AddToPrefetch(block *types.Block) {

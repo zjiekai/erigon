@@ -83,6 +83,11 @@ func (pi *PeerInfo) SetHeight(h uint64) {
 func (pi *PeerInfo) ClearDeadlines(now time.Time, givePermit bool) int {
 	pi.lock.Lock()
 	defer pi.lock.Unlock()
+	if !sort.SliceIsSorted(pi.deadlines, func(i, j int) bool {
+		return pi.deadlines[i].Before(pi.deadlines[j])
+	}) {
+		panic("not monotonic")
+	}
 	// Look for the first deadline which is not passed yet
 	firstNotPassed := sort.Search(len(pi.deadlines), func(i int) bool {
 		return pi.deadlines[i].After(now)

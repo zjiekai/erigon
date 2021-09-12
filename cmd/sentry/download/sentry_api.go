@@ -39,7 +39,7 @@ func (cs *ControlServerImpl) UpdateHead(ctx context.Context, height uint64, hash
 }
 
 func (cs *ControlServerImpl) SendBodyRequest(ctx context.Context, req *bodydownload.BodyRequest) []byte {
-	defer func(t time.Time) { fmt.Printf("SendBodyRequest.go:42: %s, %d\n", time.Since(t),len(req.BlockNums)) }(time.Now())
+	defer func(t time.Time) { fmt.Printf("SendBodyRequest.go:42: %s, %d\n", time.Since(t), len(req.BlockNums)) }(time.Now())
 	// if sentry not found peers to send such message, try next one. stop if found.
 	for i, ok, next := cs.randSentryIndex(); ok; i, ok = next() {
 		if !cs.sentries[i].Ready() {
@@ -72,6 +72,7 @@ func (cs *ControlServerImpl) SendBodyRequest(ctx context.Context, req *bodydownl
 				log.Error("Could not send block bodies request", "err", err1)
 				return nil
 			}
+			fmt.Printf("sent66: %d\n", len(sentPeers.Peers))
 			if sentPeers == nil || len(sentPeers.Peers) == 0 {
 				continue
 			}
@@ -98,6 +99,7 @@ func (cs *ControlServerImpl) SendBodyRequest(ctx context.Context, req *bodydownl
 				log.Error("Could not send block bodies request", "err", err1)
 				return nil
 			}
+			fmt.Printf("sent65: %d\n", len(sentPeers.Peers))
 			if sentPeers == nil || len(sentPeers.Peers) == 0 {
 				continue
 			}

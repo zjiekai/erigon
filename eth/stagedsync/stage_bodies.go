@@ -186,6 +186,7 @@ Loop:
 			stopped = true
 		case <-logEvery.C:
 			deliveredCount, wastedCount := cfg.bd.DeliveryCounts()
+			fmt.Printf("bodyProgress: %d,%d\n",bodyProgress,prevProgress)
 			if prevProgress == bodyProgress {
 				noProgressCount++
 			} else {

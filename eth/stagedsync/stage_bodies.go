@@ -197,9 +197,9 @@ Loop:
 			prevWastedCount = wastedCount
 			//log.Info("Timings", "d1", d1, "d2", d2, "d3", d3, "d4", d4, "d5", d5, "d6", d6)
 		case <-timer.C:
-			log.Trace("RequestQueueTime (bodies) ticked")
+			log.Warn("RequestQueueTime (bodies) ticked")
 		case <-cfg.bd.DeliveryNotify:
-			log.Debug("bodyLoop woken up by the incoming request")
+			log.Warn("bodyLoop woken up by the incoming request")
 		}
 		d6 += time.Since(start)
 	}

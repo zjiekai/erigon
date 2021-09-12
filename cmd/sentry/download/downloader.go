@@ -300,7 +300,6 @@ func RecvMessage(
 			return
 		}
 
-
 		if err = handleInboundMessage(ctx, req, sentry); err != nil {
 			return err
 		}

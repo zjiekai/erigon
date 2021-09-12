@@ -224,13 +224,16 @@ func (rt RawTransactions) EncodeIndex(i int, w *bytes.Buffer) {
 }
 
 func (bd *BodyDownload) doDeliverBodies() (err error) {
+	i := 0
 Loop:
 	for {
+		i++
 		var delivery Delivery
 
 		select { // read as much as we can, but don't wait
 		case delivery = <-bd.deliveryCh:
 		default:
+			fmt.Printf("break at: %d\n", i)
 			break Loop
 		}
 

@@ -85,8 +85,11 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 	blockNums := make([]uint64, 0, BlockBufferSize)
 	hashes := make([]common.Hash, 0, BlockBufferSize)
 	fmt.Printf("RequestMoreBodies: %d,%d\n", bd.requestedLow, bd.maxProgress)
-	defer func(t time.Time) { fmt.Printf("body_algos.go:88: %s\n", time.Since(t)) }(time.Now())
+	i:=0
+	defer func(t time.Time) { fmt.Printf("body_algos.go:88: %s, %d\n", time.Since(t),i) }(time.Now())
+
 	for ; len(blockNums) < BlockBufferSize && bd.requestedLow <= bd.maxProgress; blockNum++ {
+		i++
 		// Check if we reached highest allowed request block number, and turn back
 		if blockNum >= bd.requestedLow+bd.outstandingLimit || blockNum >= bd.maxProgress {
 			fmt.Printf("RequestMoreBodies, Avoid tight loop: %d,%d,%d\n", blockNum, bd.requestedLow+bd.outstandingLimit, bd.maxProgress)

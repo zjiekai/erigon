@@ -42,7 +42,7 @@ const (
 	// handshakeTimeout is the maximum allowed time for the `eth` handshake to
 	// complete before dropping the connection.= as malicious.
 	handshakeTimeout  = 5 * time.Second
-	maxPermitsPerPeer = 4 // How many outstanding requests per peer we may have
+	maxPermitsPerPeer = 8 // How many outstanding requests per peer we may have
 )
 
 // PeerInfo collects various extra bits of information about the peer,
@@ -83,11 +83,7 @@ func (pi *PeerInfo) SetHeight(h uint64) {
 func (pi *PeerInfo) ClearDeadlines(now time.Time, givePermit bool) int {
 	pi.lock.Lock()
 	defer pi.lock.Unlock()
-	if !sort.SliceIsSorted(pi.deadlines, func(i, j int) bool {
-		return pi.deadlines[i].Before(pi.deadlines[j])
-	}) {
-		panic("not monotonic")
-	}
+
 	// Look for the first deadline which is not passed yet
 	firstNotPassed := sort.Search(len(pi.deadlines), func(i int) bool {
 		return pi.deadlines[i].After(now)
@@ -690,7 +686,7 @@ func (ss *SentryServerImpl) SendMessageByMinBlock(_ context.Context, inreq *prot
 		ss.GoodPeers.Delete(peerID)
 		return &proto_sentry.SentPeers{}, fmt.Errorf("sendMessageByMinBlock to peer %s: %v", peerID, err)
 	}
-	peerInfo.AddDeadline(time.Now().Add(30 * time.Second))
+	peerInfo.AddDeadline(time.Now().Add(60 * time.Second))
 	return &proto_sentry.SentPeers{Peers: []*proto_types.H512{gointerfaces.ConvertBytesToH512([]byte(peerID))}}, nil
 }
 

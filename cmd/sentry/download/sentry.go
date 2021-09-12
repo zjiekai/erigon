@@ -877,6 +877,7 @@ func (ss *SentryServerImpl) GetStatus() *proto_sentry.StatusData {
 }
 
 func (ss *SentryServerImpl) send(msgID proto_sentry.MessageId, peerID string, b []byte) {
+	fmt.Printf("sentry got: %s\n", msgID.String())
 	ss.messageStreamsLock.RLock()
 	defer ss.messageStreamsLock.RUnlock()
 	req := &proto_sentry.InboundMessage{

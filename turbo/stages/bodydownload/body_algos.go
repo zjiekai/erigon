@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/holiman/uint256"
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -84,6 +85,7 @@ func (bd *BodyDownload) RequestMoreBodies(db kv.Tx, blockNum uint64, currentTime
 	blockNums := make([]uint64, 0, BlockBufferSize)
 	hashes := make([]common.Hash, 0, BlockBufferSize)
 	fmt.Printf("RequestMoreBodies: %d,%d\n", bd.requestedLow, bd.maxProgress)
+	defer func(t time.Time) { fmt.Printf("body_algos.go:88: %s\n", time.Since(t)) }(time.Now())
 	for ; len(blockNums) < BlockBufferSize && bd.requestedLow <= bd.maxProgress; blockNum++ {
 		// Check if we reached highest allowed request block number, and turn back
 		if blockNum >= bd.requestedLow+bd.outstandingLimit || blockNum >= bd.maxProgress {

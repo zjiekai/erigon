@@ -949,10 +949,12 @@ func (ss *SentryServerImpl) Messages(req *proto_sentry.MessagesRequest, server p
 		case <-server.Context().Done():
 			return nil
 		case in := <-ch:
+			t:=time.Now()
 			if err := server.Send(in); err != nil {
 				log.Warn("Sending msg to core P2P failed", "msg", in.Id.String(), "error", err)
 				return err
 			}
+			fmt.Printf("sentry: %s,%s\n",in.Id.String(),			time.Since(t))
 		}
 	}
 }

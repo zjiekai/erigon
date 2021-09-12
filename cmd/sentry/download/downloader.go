@@ -300,12 +300,10 @@ func RecvMessage(
 			return
 		}
 
-		t := time.Now()
 
 		if err = handleInboundMessage(ctx, req, sentry); err != nil {
 			return err
 		}
-		fmt.Printf("RecvMessage: %s, %s\n", req.Id.String(), time.Since(t))
 
 		if wg != nil {
 			wg.Done()

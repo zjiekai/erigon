@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ledgerwatch/erigon/params"
 	"net"
 	"net/http"
 	"os"
@@ -28,6 +27,8 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/ledgerwatch/erigon/params"
 
 	"github.com/gofrs/flock"
 	"github.com/ledgerwatch/erigon-lib/kv"
